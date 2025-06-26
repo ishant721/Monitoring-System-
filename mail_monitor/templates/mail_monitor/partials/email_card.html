@@ -1,0 +1,76 @@
+{# mail_monitor/templates/mail_monitor/partials/email_card.html #}
+{% load static %}
+
+<style>
+    .reply-card {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-left: 5px solid #6c757d;
+        border-radius: 8px;
+        margin-left: 2.5rem;
+        margin-top: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .reply-header {
+        padding: 1rem 1.5rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .reply-body {
+        padding: 1.5rem;
+        white-space: pre-wrap;
+        line-height: 1.6;
+    }
+    .reply-body .text-muted {
+        padding: 2em 1em;
+        text-align: center;
+        display: block;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+</style>
+
+<li class="reply-card">
+    <div class="reply-header">
+        <p class="mb-1"><strong>From:</strong> {{ email_node.sender }}</p>
+        <p class="mb-1"><strong>To:</strong> {{ email_node.to_recipients|default:"(Undisclosed recipients)" }}</p>
+        
+        {# --- ADDED CC DETAILS --- #}
+        {% if email_node.cc_recipients %}
+            <p class="mb-1"><strong>Cc:</strong> {{ email_node.cc_recipients }}</p>
+        {% endif %}
+        
+        <p class="mb-0 text-muted"><small>{{ email_node.date|date:"F d, Y, P" }}</small></p>
+    </div>
+    <div class="reply-body">
+        <h6 class="mb-3"><strong>Subject: {{ email_node.subject|default:"(No Subject)" }}</strong></h6>
+        
+        <div class="email-content">
+            {% if email_node.body %}
+                {{ email_node.body|safe }}
+            {% else %}
+                <p class="text-muted">[This email has no displayable body content.]</p>
+            {% endif %}
+        </div>
+
+        {% if email_node.attachments.all %}
+            <div class="attachments-list pt-3 mt-3 border-top">
+                <strong>Attachments:</strong>
+                <ul class="list-unstyled">
+                    {% for attachment in email_node.attachments.all %}
+                    <li class="d-inline-block me-2 mb-2">
+                        <a href="{{ attachment.file.url }}" target="_blank" download class="btn btn-light border btn-sm">
+                            <i class="fas fa-paperclip me-1"></i>{{ attachment.filename }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+</li>
+
+{# --- The recursive part to show replies-to-replies --- #}
+{% for reply in email_node.replies.all %}
+    {% include "mail_monitor/partials/email_card.html" with email_node=reply is_reply=True %}
+{% endfor %}

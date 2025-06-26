@@ -1,0 +1,9 @@
+Hi {{ approved_user_instance.get_full_name }},
+
+Great news! Your User account '{{ approved_user_instance.email }}' on {{ site_name }} has been approved by your Company Admin.
+
+You can now log in to the system:
+{{ login_link }}
+
+Welcome!
+The {{ site_name }} Team

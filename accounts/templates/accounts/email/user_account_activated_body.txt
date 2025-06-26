@@ -1,0 +1,8 @@
+Hi {{ user.get_full_name }},
+
+Your account ({{ user.email }}) on {{ site_name }} has been activated by {{ approver_name }}.
+
+You can now log in: {{ login_url }}
+
+Thanks,
+The {{ site_name }} Team

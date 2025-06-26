@@ -1,0 +1,12 @@
+Hello Superadmin,
+
+Admin {{ requesting_admin_name }} ({{ requesting_admin_email }}) has requested an extension for their trial period.
+
+Current trial ends: {{ requesting_admin_trial_ends_at|date:"F d, Y H:i" }}
+Reason for request:
+{{ extension_reason|linebreaksbr }}
+
+Please review this request in the Superadmin Dashboard: {{ superadmin_dashboard_url }}
+
+Thanks,
+{{ site_name }} Notification System

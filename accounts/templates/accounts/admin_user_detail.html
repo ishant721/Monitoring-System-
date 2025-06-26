@@ -1,0 +1,30 @@
+{# accounts/templates/accounts/admin_user_detail.html #}
+{% extends "accounts/base.html" %}
+{% load humanize %}
+
+{% block title %}Details for {{ target_user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-user-chart me-2"></i>User Details & Activity: {{ target_user.get_full_name }}
+            </h2>
+            <p class="text-muted mb-0">
+                {{ target_user.email }} | Role: {{ target_user.get_role_display }} | Admin: {{ target_user.company_admin.email|default:"N/A" }}
+            </p>
+        </div>
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <hr class="my-4">
+
+    {# This is the key part. It renders the monitoring dashboard #}
+    {# right here inside the content block of your main layout. #}
+    {# The context variables from the view are passed through automatically. #}
+    {% include "monitor_app/index.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Register Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-lg border-0 rounded-lg mt-4">
+            <div class="card-header bg-primary text-white text-center"><h3 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create Your Account</h3></div>
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {{ form|crispy }}
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success btn-lg"><i class="fas fa-paper-plane me-2"></i>Register</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3 bg-light">
+                <div class="small">Already have an account? <a href="{% url 'accounts:login' %}">Login here</a>.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

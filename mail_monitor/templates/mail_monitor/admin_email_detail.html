@@ -1,0 +1,119 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .email-detail-card { 
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+        overflow: hidden; /* To contain the card header's background */
+    }
+    .email-card-header { 
+        padding: 1.5rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .email-subject {
+        margin: 0 0 1rem 0;
+        font-size: 1.75rem;
+        color: #212529;
+        font-weight: 600;
+        word-break: break-word;
+    }
+    .email-header-grid { 
+        display: grid; 
+        grid-template-columns: auto 1fr; 
+        gap: 0.5em 1.5em; 
+        align-items: start; 
+    }
+    .email-header-grid dt { 
+        font-weight: 600; 
+        text-align: right; 
+        color: #6c757d; 
+    }
+    .email-header-grid dd { 
+        margin: 0; 
+        word-break: break-all; 
+        color: #495057;
+    }
+    .email-body-wrapper {
+        padding: 1.5rem 2rem;
+        line-height: 1.7;
+        color: #212529;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    .attachments-section { padding: 1.5rem 2rem; border-top: 1px solid #e9ecef; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h3">Email Details</h2>
+        <a href="{% url 'mail_monitor:admin_inbox' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Back to Inbox</a>
+    </div>
+
+    <div class="email-detail-card">
+        <div class="email-card-header">
+            <h3 class="email-subject">{{ email.subject|default:"(No Subject)" }}</h3>
+            <div class="email-header-grid">
+                
+                {# --- THIS IS THE CORRECTED SECTION --- #}
+                <dt>Direction:</dt>
+                <dd>
+                    {% if email.direction == email.Direction.INCOMING %}
+                        <span class="badge bg-primary">Incoming</span>
+                    {% else %}
+                        <span class="badge bg-success">Outgoing</span>
+                    {% endif %}
+                </dd>
+
+                <dt>From:</dt>
+                <dd>{{ email.sender|default:"(not available)" }}</dd>
+                
+                <dt>To:</dt>
+                <dd>{{ email.recipients_to|linebreaksbr|default:"(none specified)" }}</dd>
+                
+                <dt>Cc:</dt>
+                <dd>{{ email.recipients_cc|linebreaksbr|default:"(none)" }}</dd>
+
+                {# We only expect BCC on outgoing mail #}
+                {% if email.direction == email.Direction.OUTGOING %}
+                    <dt>Bcc:</dt>
+                    <dd>{{ email.recipients_bcc|linebreaksbr|default:"(none)" }}</dd>
+                {% endif %}
+
+                <dt>Date:</dt>
+                <dd>{{ email.date|date:"F d, Y, P" }}</dd>
+
+                <dt>User:</dt>
+                <dd>{{ email.account.user.get_full_name }}</dd>
+            </div>
+        </div>
+        
+        <div class="email-body-wrapper">
+            {# The 'safe' filter is used here assuming you have cleaned the HTML during parsing #}
+            {{ email.body|safe|default:"<p class='text-muted text-center'><em>This email has no displayable body content.</em></p>" }}
+        </div>
+
+        {% if email.has_attachments %}
+        <div class="attachments-section">
+            <h5><i class="fas fa-paperclip me-2"></i>Attachments</h5>
+            <ul class="list-unstyled">
+                {% for attachment in email.attachments.all %}
+                <li class="d-inline-block me-2 mb-2">
+                    <a href="{{ attachment.file.url }}" target="_blank" download class="btn btn-light border btn-sm">
+                       {{ attachment.filename }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

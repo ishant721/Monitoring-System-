@@ -1,0 +1,103 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-text.text-muted {
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h2 class="h4 mb-0"><i class="fas fa-cogs me-2"></i>{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        These server settings will be used as a template for all users you manage. 
+                        Your users will only need to provide their own App Password, making setup much easier for them.
+                    </p>
+                    <hr>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-success" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="id_provider" class="form-label fw-bold">Email Provider Template</label>
+                            <select id="id_provider" class="form-select">
+                                {% for key, details in providers.items %}
+                                    <option value="{{ key }}">{{ details.name }}</option>
+                                {% endfor %}
+                                <option value="other">Other (Enter Manually)</option>
+                            </select>
+                            <div class="form-text">Select a provider to automatically fill in the recommended server details below.</div>
+                        </div>
+
+                        {{ form|crispy }}
+
+                        <div class="d-flex justify-content-end mt-4">
+                            <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save Company Configuration
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const providerPresets = JSON.parse('{{ provider_presets_json|safe }}');
+    const providerSelect = document.getElementById('id_provider');
+    
+    const imapServerInput = document.getElementById('id_imap_server');
+    const imapPortInput = document.getElementById('id_imap_port');
+    const smtpServerInput = document.getElementById('id_smtp_server');
+    const smtpPortInput = document.getElementById('id_smtp_port');
+
+    function updateFormFields() {
+        const selectedProviderKey = providerSelect.value;
+        const presets = providerPresets[selectedProviderKey];
+        
+        if (presets) {
+            imapServerInput.value = presets.imap_server || '';
+            imapPortInput.value = presets.imap_port || 993;
+            smtpServerInput.value = presets.smtp_server || '';
+            smtpPortInput.value = presets.smtp_port || 587;
+        } else {
+            // Clear fields if 'Other' is selected
+            imapServerInput.value = '';
+            imapPortInput.value = 993;
+            smtpServerInput.value = '';
+            smtpPortInput.value = 587;
+        }
+    }
+
+    providerSelect.addEventListener('change', updateFormFields);
+    
+    // Set initial values on page load
+    updateFormFields();
+});
+</script>
+{% endblock %}

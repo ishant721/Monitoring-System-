@@ -1,0 +1,48 @@
+{# templates/partials/pagination.html #}
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation example" class="mt-4">
+  <ul class="pagination pagination-sm justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?{{ param_name }}={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != param_name and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+          <span aria-hidden="true">«</span>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link" aria-hidden="true">«</span>
+      </li>
+    {% endif %}
+
+    {% for i in page_obj.paginator.page_range %}
+      {% if page_obj.number == i %}
+        <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+      {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %} 
+        <li class="page-item"><a class="page-link" href="?{{ param_name }}={{ i }}{% for key, value in request.GET.items %}{% if key != param_name and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+      {% elif i == 1 or i == page_obj.paginator.num_pages %} {# Always show first and last page #}
+         {% if i == 1 and page_obj.number > 4 %} {# Ellipsis after first page #}
+            <li class="page-item"><a class="page-link" href="?{{ param_name }}={{ i }}{% for key, value in request.GET.items %}{% if key != param_name and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+         {% elif i == page_obj.paginator.num_pages and page_obj.number < page_obj.paginator.num_pages|add:'-3' %} {# Ellipsis before last page #}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            <li class="page-item"><a class="page-link" href="?{{ param_name }}={{ i }}{% for key, value in request.GET.items %}{% if key != param_name and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+         {% elif i == 1 or i == page_obj.paginator.num_pages %} {# Default case for first/last if no ellipsis needed near them #}
+            <li class="page-item"><a class="page-link" href="?{{ param_name }}={{ i }}{% for key, value in request.GET.items %}{% if key != param_name and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+         {% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?{{ param_name }}={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != param_name and key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+          <span aria-hidden="true">»</span>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link" aria-hidden="true">»</span>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+{% endif %}

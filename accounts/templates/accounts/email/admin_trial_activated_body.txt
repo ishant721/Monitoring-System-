@@ -1,0 +1,10 @@
+Hi {{ admin_user.get_full_name }},
+
+Your Admin account ({{ admin_user.email }}) on {{ site_name }} has been activated with a trial period.
+Your trial ends on: {{ admin_user.access_ends_at|date:"F d, Y, H:i T" }}.
+Max users you can manage during trial: {{ admin_user.max_allowed_users }}
+
+Login here: {{ login_url }}
+
+Thanks,
+The {{ site_name }} Team

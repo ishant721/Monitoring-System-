@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 2em; background: #f0f2f5; color: #333; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #1d2129; text-align: center; }
+        
+        /* Styles for success and error messages */
+        .alert { padding: 1em; margin-bottom: 1.5em; border-radius: 6px; border: 1px solid transparent; font-weight: 500; }
+        .alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+
+        .info-box { background-color: #f0f8ff; border-left: 4px solid #007bff; padding: 1em; margin-bottom: 1.5em; border-radius: 4px; }
+        .form-group { margin-bottom: 1.5em; }
+        .form-group label { display: block; margin-bottom: .5em; font-weight: 600; color: #606770; }
+        .form-group input, .form-group select { width: 100%; padding: .8em; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 1em; }
+        .form-group select { appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto; }
+        .form-group .email-display { background-color: #f7f7f7; padding: .8em; border-radius: 6px; border: 1px solid #ddd; }
+        button { width: 100%; background: #007bff; color: white; padding: .8em; border: none; border-radius: 6px; cursor: pointer; font-size: 1.1em; font-weight: bold; }
+        .help-text { font-size: 0.9em; color: #606770; margin-top: 0.5em; }
+        .other-provider-link { text-align: center; margin-top: 1.5em; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ title }}</h1>
+
+        {# --- THIS BLOCK DISPLAYS THE VALIDATION ERRORS --- #}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="info-box">
+            <p>To keep your main password secure, please generate and use an <strong>App Password</strong> from your email provider.</p>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_provider">Email Provider</label>
+                <select id="id_provider" name="provider">
+                    {% for key, details in providers.items %}
+                        <option value="{{ key }}" {% if key == selected_provider %}selected{% endif %}>
+                            {{ details.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Email Address</label>
+                <div class="email-display"><strong>{{ user_email }}</strong></div>
+            </div>
+
+            <div class="form-group">
+                <label for="id_app_password">{{ form.app_password.label }}</label>
+                {{ form.app_password }}
+                <div class="help-text">{{ form.app_password.help_text }}</div>
+            </div>
+
+            <button type="submit">Save and Authenticate</button>
+        </form>
+
+        <div class="other-provider-link">
+            <p>Provider not listed? <a href="{% url 'mail_monitor:setup_manual' %}">Click here for manual setup.</a></p>
+        </div>
+    </div>
+</body>
+</html>

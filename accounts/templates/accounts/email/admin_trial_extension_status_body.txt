@@ -1,0 +1,18 @@
+Hi {{ admin_user.get_full_name }},
+
+Regarding your trial extension request for your Admin account ({{ admin_user.email }}) on {{ site_name }}:
+
+Status: {{ status|upper }}
+
+{% if new_trial_ends_at %}
+Your new trial end date is: {{ new_trial_ends_at|date:"F d, Y, H:i T" }}.
+{% endif %}
+
+{% if superadmin_message %}
+Message from Superadmin: {{ superadmin_message }}
+{% endif %}
+
+Login here: {{ login_url }}
+
+Thanks,
+The {{ site_name }} Team

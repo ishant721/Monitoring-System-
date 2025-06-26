@@ -1,0 +1,14 @@
+Hi {{ admin_user.get_full_name }},
+
+Your Admin account ({{ admin_user.email }}) on {{ site_name }} is now on a subscription plan.
+{% if admin_user.access_ends_at %}
+Your current subscription period ends on: {{ admin_user.access_ends_at|date:"F d, Y, H:i T" }}.
+{% else %}
+Your subscription is active with no set end date.
+{% endif %}
+Max users you can manage: {{ admin_user.max_allowed_users }}
+
+Login here: {{ login_url }}
+
+Thanks,
+The {{ site_name }} Team

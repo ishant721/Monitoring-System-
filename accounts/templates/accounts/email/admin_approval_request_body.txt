@@ -1,0 +1,12 @@
+A new Admin (Company) has registered and requires your approval.
+
+Admin Details:
+  Name: {{ admin_user.get_full_name }}
+  Email: {{ admin_user.email }}
+  Date Registered: {{ admin_user.date_joined|date:"Y-m-d H:i" }}
+
+Please review and approve their registration by visiting the Superadmin Dashboard:
+{{ approval_link }}
+
+Thank you.
+The System Team

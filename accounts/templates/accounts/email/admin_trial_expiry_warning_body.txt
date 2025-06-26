@@ -1,0 +1,10 @@
+Hi {{ admin_user.get_full_name }},
+
+This is a reminder that your Admin trial account ({{ admin_user.email }}) on {{ site_name }} is due to expire in {{ days_remaining }} day(s), on {{ admin_user.access_ends_at|date:"F d, Y" }}.
+
+To continue using the service without interruption, please request an extension or contact a Superadmin to discuss subscription options.
+
+Login here: {{ login_url }}
+
+Thanks,
+The {{ site_name }} Team

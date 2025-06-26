@@ -1,0 +1,11 @@
+Hi {{ user.get_full_name }},
+
+Your account ({{ user.email }}) on {{ site_name }} has been deactivated.
+{% if reason %}
+Reason: {{ reason }}
+{% endif %}
+
+If you believe this is an error, please contact support or your company admin.
+
+Thanks,
+The {{ site_name }} Team

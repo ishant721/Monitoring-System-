@@ -1,0 +1,18 @@
+# Ignore media files
+/media/
+
+# Ignore static files
+/static/
+/staticfiles_collected/
+
+# Ignore virtual environments
+/django_enviro/
+/Agent/python_agent_venv/
+
+# Ignore build artifacts inside Agent
+/Agent/python_agent/build/
+/Agent/python_agent/dist/
+/Agent/python_agent/ffmpeg/
+
+# Ignore SQLite DB
+db.sqlite3

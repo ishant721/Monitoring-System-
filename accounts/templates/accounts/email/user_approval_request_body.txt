@@ -1,0 +1,13 @@
+Hi {{ company_admin.get_full_name }},
+
+A new User (Employee) has registered under your company on {{ site_name }} and requires your approval:
+
+  User Name: {{ user_instance.get_full_name }}
+  User Email: {{ user_instance.email }}
+  Date Registered: {{ user_instance.date_joined|date:"Y-m-d H:i" }}
+
+Please log in to your Admin Dashboard to review and approve their registration:
+{{ approval_link }}
+
+Thank you.
+The {{ site_name }} Team

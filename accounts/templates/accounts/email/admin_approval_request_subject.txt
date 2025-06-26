@@ -1,0 +1,1 @@
+New Admin Registration Approval Request: {{ admin_user.email }}

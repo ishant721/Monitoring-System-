@@ -1,0 +1,126 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card-header bg-primary text-white text-center"><h3 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Login to Your Account</h3></div>
+            <div class="card-body p-4">
+                
+                {# --- THIS IS THE NEW PART: A hidden container for the username --- #}
+                {% if form.get_user %}
+                    <div id="user-info" data-email="{{ form.get_user.email }}" style="display: none;"></div>
+                {% endif %}
+
+                <form id="login-form" method="post" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {{ form|crispy }}
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center py-3 bg-light">
+                <div class="small mb-2"><a href="{% url 'accounts:password_reset_request' %}">Forgot your password?</a></div>
+                <div class="small">Don't have an account? <a href="{% url 'accounts:register' %}">Register here</a>.</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // This script checks if a successful login has just occurred.
+    const userInfoDiv = document.getElementById('user-info');
+    
+    // The 'user-info' div will only exist in the HTML if the login form was valid
+    // and Django re-rendered the page before the final redirect.
+    // In many modern setups, we'd handle the login with a fetch API call instead.
+    // However, to work with your existing form submission, we can use this check.
+    // A better check is to see if we are on the dashboard page AFTER a successful login.
+    // This script is better placed in your 'base.html' or a specific dashboard template.
+    
+    // Let's assume this script runs on the page immediately following a successful login,
+    // like the main dashboard.
+});
+
+// A MORE ROBUST SOLUTION: Place this script in your base.html or a shared JS file.
+// This function should be called by your login form's onsubmit event.
+async function handleLogin(event) {
+    event.preventDefault(); // Stop the default form submission
+    const form = event.target;
+    const formData = new FormData(form);
+    const email = formData.get('username'); // Crispy forms often names the email field 'username'
+    const password = formData.get('password');
+    const csrfToken = formData.get('csrfmiddlewaretoken');
+
+    try {
+        // --- STEP 1: Perform the standard Django session login ---
+        const loginResponse = await fetch(form.action, {
+            method: 'POST',
+            body: new URLSearchParams(formData).toString(), // Standard form encoding
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken
+            }
+        });
+
+        // Check if the login response indicates a successful redirect (status 200 is ok, 302 is a redirect)
+        // or if it re-rendered the form with errors. A simple check is to see if it has an error element.
+        const loginHtml = await loginResponse.text();
+        if (loginHtml.includes('alert-danger')) {
+            // If there's an error, replace the page content to show it.
+            document.body.innerHTML = loginHtml;
+            return; // Stop the process
+        }
+
+        // --- STEP 2: If session login was successful, fetch the API token ---
+        console.log("Session login successful. Fetching API token...");
+        const tokenResponse = await fetch("{% url 'token_obtain_pair' %}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+        });
+
+        if (!tokenResponse.ok) {
+            throw new Error("Could not retrieve API token after login. Please check credentials.");
+        }
+
+        const tokens = await tokenResponse.json();
+
+        // --- STEP 3: CRITICAL - Save the token to localStorage ---
+        console.log("API token received. Saving to localStorage.");
+        localStorage.setItem('accessToken', tokens.access);
+        localStorage.setItem('refreshToken', tokens.refresh);
+
+        // --- STEP 4: Proceed to the intended destination ---
+        // The server-side login view will handle the redirect, so we can just follow it.
+        // Or we can force it here.
+        window.location.href = loginResponse.url; // Go where the server told us to go
+
+    } catch (error) {
+        console.error("Login process failed:", error);
+        // You can display this error message in an alert or a div on the page
+        alert("An error occurred during login. Please try again.");
+    }
+}
+
+// Attach the event listener to the form
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+}
+
+</script>
+{% endblock %}

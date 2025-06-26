@@ -1,0 +1,9 @@
+requests
+websockets>=10.0
+pynput
+mss
+Pillow
+psutil
+pyscreeze
+# Removed: pyobjc-framework-AppKit; platform_system == "Darwin"
+# Removed: pygetwindow; platform_system == "Windows" (It's not for macOS)

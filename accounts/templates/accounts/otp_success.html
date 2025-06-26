@@ -1,0 +1,19 @@
+{% extends "accounts/base.html" %}
+{% block title %}Verification Complete{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2>Verification Steps Complete!</h2>
+            </div>
+            <div class="card-body text-center">
+                <p class="lead">{{ message }}</p>
+                <p>You will be notified once your account is approved by the relevant authority.</p>
+                <a href="{% url 'accounts:login' %}" class="btn btn-info mt-3">Go to Login Page</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

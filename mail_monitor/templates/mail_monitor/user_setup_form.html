@@ -1,0 +1,71 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .status-box {
+        border-left: 4px solid;
+        padding: 1em 1.5em;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .status-box.active { border-color: #28a745; }
+    .status-box.inactive { border-color: #dc3545; }
+    .status-text-active { color: #28a745; }
+    .status-text-inactive { color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h2 class="h4 mb-0"><i class="fas fa-key me-2"></i>{{ title }}</h2>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Your company admin has already configured the necessary email server settings. To activate monitoring for your account (<strong>{{ request.user.email }}</strong>), please provide an App Password below.
+                    </p>
+
+                    <div class="alert alert-info">
+                        <strong>What is an App Password?</strong> It's a 16-digit passcode that gives an app permission to access your email account. It's more secure than using your main password. You must generate it from your email provider's security settings (e.g., Google Account settings).
+                    </div>
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} mt-3" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="status-box my-4 {% if email_account and email_account.is_active %}active{% else %}inactive{% endif %}">
+                        <strong>Current Status:</strong> 
+                        {% if email_account and email_account.is_active %}
+                            <span class="fw-bold status-text-active">ACTIVE</span>
+                        {% else %}
+                            <span class="fw-bold status-text-inactive">INACTIVE</span>
+                            <small class="d-block">Monitoring will begin once you save a valid App Password.</small>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-flex justify-content-end mt-4">
+                             <a href="{% url 'accounts:user_dashboard' %}" class="btn btn-secondary me-2">Back to Dashboard</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Save and Authenticate
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

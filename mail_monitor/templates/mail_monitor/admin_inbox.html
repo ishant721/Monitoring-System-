@@ -1,0 +1,144 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .table-responsive {
+        overflow-x: auto;
+    }
+    .table thead th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #eef2f7;
+    }
+    .view-btn {
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .badge {
+        font-size: 0.8em;
+        padding: 0.3em 0.6em;
+    }
+    /* Styles for the new Direction column badges */
+    .direction-incoming {
+        color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+        border: 1px solid rgba(13, 110, 253, 0.2);
+    }
+    .direction-outgoing {
+        color: #198754;
+        background-color: rgba(25, 135, 84, 0.1);
+        border: 1px solid rgba(25, 135, 84, 0.2);
+    }
+    div.dataTables_wrapper div.dataTables_filter {
+        text-align: right;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-inbox me-2"></i>{{ title }}</h2>
+    </div>
+
+    {% if messages %}{% for message in messages %}<div class="alert alert-warning alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="emailsTable" 
+                       class="table table-hover table-sm" 
+                       style="width:100%"
+                       data-date-column-index="{% if request.user.is_superadmin %}5{% else %}4{% endif %}">
+                    <thead>
+                        <tr>
+                            {% if request.user.is_superadmin %}<th>User</th>{% endif %}
+                            
+                            {# --- NEW COLUMN ADDED HERE --- #}
+                            <th>Direction</th>
+
+                            <th>Subject</th>
+                            <th>From / To</th>
+                            <th>Date</th>
+                            <th class="text-center">Attachments</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for email in emails %}
+                        <tr>
+                            {% if request.user.is_superadmin %}
+                                <td>{{ email.account.user.username }}</td>
+                            {% endif %}
+                            
+                            {# --- DATA FOR THE NEW COLUMN --- #}
+                            <td>
+                                {% if email.direction == email.Direction.INCOMING %}
+                                    <span class="badge direction-incoming"><i class="fas fa-arrow-down me-1"></i>Incoming</span>
+                                {% else %}
+                                    <span class="badge direction-outgoing"><i class="fas fa-arrow-up me-1"></i>Outgoing</span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ email.subject|truncatechars:50 }}</td>
+                            <td>
+                                {% if email.direction == email.Direction.INCOMING %}
+                                    <span class="text-muted">From:</span> {{ email.sender|truncatechars:40 }}
+                                {% else %}
+                                    <span class="text-muted">To:</span> {{ email.recipients_to|truncatechars:40 }}
+                                {% endif %}
+                            </td>
+                            <td data-sort="{{ email.date.timestamp }}">{{ email.date|date:"Y-m-d H:i" }}</td>
+                            <td class="text-center">
+                                {% if email.has_attachments %}
+                                    <i class="fas fa-paperclip text-muted" title="This email has attachments"></i>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <a href="{% url 'mail_monitor:admin_email_detail' email.id %}" class="btn btn-outline-primary btn-sm view-btn" title="View email thread and details">
+                                    <i class="fas fa-comments me-1"></i> View Thread
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Read the correct date column index from the data attribute on the table
+    var table = $('#emailsTable');
+    var dateColumnIndex = parseInt(table.data('date-column-index'));
+
+    table.DataTable({
+        // Use the JavaScript variable to sort by the date column by default
+        "order": [[ dateColumnIndex, "desc" ]], 
+        "pageLength": 50,
+        "language": {
+            "search": "Filter records:",
+            "lengthMenu": "Show _MENU_ emails per page",
+            "info": "Showing _START_ to _END_ of _TOTAL_ emails",
+            "emptyTable": "No emails have been fetched yet.",
+            "zeroRecords": "No matching emails found"
+        }
+    });
+});
+</script>
+{% endblock %}

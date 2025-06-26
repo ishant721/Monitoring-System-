@@ -1,0 +1,45 @@
+{# accounts/templates/accounts/download_agent.html #}
+
+{% extends "accounts/base.html" %}
+
+{% block title %}{{ title|default:"Download Agent" }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h2 class="h4 mb-0"><i class="fas fa-download me-2"></i>Download Your Monitoring Agent</h2>
+        </div>
+        <div class="card-body">
+            <p class="lead">Follow these steps to set up the monitoring agent on your computer.</p>
+            <hr>
+            
+            <h4 class="mt-4">Step 1: Get Your One-Time Pairing Token</h4>
+            <p>This token securely links the agent software to your account. It is valid for 60 minutes.</p>
+            <div class="alert alert-info">
+                <p class="mb-1"><strong>Your Pairing Token:</strong></p>
+                <pre><code style="font-size: 1.2rem; background-color: #e9ecef; padding: 5px 10px; border-radius: 4px;">{{ pairing_token }}</code></pre>
+                <small class="text-muted">Copy this entire token. You will need to paste it into the agent when prompted.</small>
+            </div>
+
+            <h4 class="mt-4">Step 2: Download the Agent Installer</h4>
+            <p>Choose the correct version for your operating system.</p>
+            <div class="d-grid gap-2 d-md-block">
+                {# NOTE: Replace '#' with the actual paths to your installer files #}
+                <a href="#" class="btn btn-success btn-lg"><i class="fab fa-windows me-2"></i>Download for Windows</a>
+                <a href="#" class="btn btn-success btn-lg"><i class="fab fa-apple me-2"></i>Download for macOS</a>
+                <a href="#" class="btn btn-success btn-lg"><i class="fab fa-linux me-2"></i>Download for Linux</a>
+            </div>
+            
+            <h4 class="mt-4">Step 3: Run the Agent</h4>
+            <ol>
+                <li>After downloading, run the installer on your computer.</li>
+                <li>The agent will open a terminal or command prompt window.</li>
+                <li>It will ask you to `Please enter the one-time pairing token...`</li>
+                <li>Paste the token you copied from this page and press Enter.</li>
+                <li>The agent will confirm that pairing was successful and will then start running in the background.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}

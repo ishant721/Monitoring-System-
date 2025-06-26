@@ -1,0 +1,10 @@
+Hi {{ admin_user.get_full_name }},
+
+Your Admin account access ({{ admin_user.email }}) on {{ site_name }} has expired.
+Your account type is now: {{ admin_user.get_admin_account_type_display }}.
+Your ability to manage users has been suspended.
+
+Please contact a Superadmin to discuss renewal or subscription options.
+
+Thanks,
+The {{ site_name }} Team

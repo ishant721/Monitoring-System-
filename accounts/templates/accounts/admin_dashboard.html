@@ -1,0 +1,244 @@
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .action-buttons .btn-sm {
+        padding: .25rem .5rem;
+        font-size: .8rem;
+        margin-left: 0.25rem;
+    }
+    .action-buttons .btn-sm:first-child {
+        margin-left: 0;
+    }
+    .card-body-condensed {
+        padding: 0.85rem;
+    }
+    .table-sm th, .table-sm td {
+        padding: 0.4rem;
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.8em;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    {# --- Page Header --- #}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>
+            {% if is_superadmin_view %}
+                <i class="fas fa-users-cog me-2"></i>User Management Overview
+            {% else %}
+                <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+            {% endif %}
+        </h2>
+        <span class="badge bg-secondary p-2">Role: {{ request.user.get_role_display }}</span>
+    </div>
+
+    {% if not is_superadmin_view %}
+        <p class="lead">Welcome, {{ request.user.get_full_name }}!</p>
+    {% endif %}
+    <hr class="my-3">
+
+    {# --- Messages & Notifications --- #}
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show my-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if is_admin_role_view and impending_expiry_notification %}
+    <div class="alert alert-{{ impending_expiry_notification.type }} alert-dismissible fade show my-3 shadow-sm" role="alert">
+        <h5 class="alert-heading"><i class="fas fa-stopwatch me-2"></i>Access Alert!</h5>
+        <p class="mb-0">{{ impending_expiry_notification.text }}</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    {# --- Admin's Account Status --- #}
+    {% if is_admin_role_view and admin_user_instance %}
+    <div class="card mb-4 shadow-sm 
+        {% if not admin_user_instance.is_admin_access_active %}border-danger 
+        {% elif admin_user_instance.admin_account_type == admin_user_instance.AdminAccountType.TRIAL %}border-info
+        {% else %}border-success{% endif %}">
+        <div class="card-header 
+            {% if not admin_user_instance.is_admin_access_active %}bg-danger text-white
+            {% elif admin_user_instance.admin_account_type == admin_user_instance.AdminAccountType.TRIAL %}bg-info text-dark
+            {% else %}bg-success text-white{% endif %}">
+            <h5 class="mb-0"><i class="fas fa-user-cog me-2"></i>Your Account Status</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-2"><strong>Account Type:</strong> {{ admin_user_instance.get_admin_account_type_display }}</p>
+            {% if admin_user_instance.is_admin_access_active and admin_user_instance.access_ends_at %}
+                <p class="mb-2"><strong>Access Ends:</strong> {{ admin_user_instance.access_ends_at|date:"F d, Y" }} (<strong>{{ admin_user_instance.access_days_remaining }}</strong> days remaining)</p>
+            {% elif not admin_user_instance.is_admin_access_active %}
+                <div class="alert alert-danger small p-2"><i class="fas fa-exclamation-triangle me-1"></i> Your account access is inactive. Functionality is limited.</div>
+            {% endif %}
+            {% if admin_user_instance.trial_extension_requested %}
+                 <div class="alert alert-info mt-3 small p-2"><i class="fas fa-info-circle me-1"></i> Your trial extension request is pending Superadmin review.</div>
+            {% elif trial_extension_form_for_admin %}
+                <hr class="my-3"><h6 class="mb-2"><i class="fas fa-calendar-plus me-1"></i>Request Trial Extension:</h6>
+                <form method="post" action="{% url 'accounts:admin_request_trial_extension' %}" class="mt-2">
+                    {% csrf_token %}
+                    {{ trial_extension_form_for_admin|crispy }}
+                    <button type="submit" class="btn btn-sm btn-warning mt-2"><i class="fas fa-paper-plane me-1"></i>Submit Request</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {# --- Row of Dashboard Cards --- #}
+    <div class="row">
+        {% if is_admin_role_view and admin_user_instance.is_admin_access_active %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light"><i class="fas fa-users me-2"></i>User Management Capacity</div>
+                <div class="card-body">
+                    <p class="mb-1">Active Users: <strong>{{ current_approved_count|default:0 }} / {{ max_users_limit|default:"Unlimited" }}</strong></p>
+                    {% if not can_approve_more_flag %}<p class="alert alert-warning small p-2 mt-2 mb-0">Your user limit has been reached.</p>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light"><i class="fas fa-desktop me-2"></i>User Activity Monitoring</div>
+                <div class="card-body d-flex flex-column">
+                    <p class="flex-grow-1">View activity logs, screenshots, and more for your managed users.</p>
+                    <a href="{% url 'monitor_app:dashboard' %}" class="btn btn-outline-primary mt-auto"><i class="fas fa-chart-line me-1"></i> Go to Activity Dashboard</a>
+                </div>
+            </div>
+        </div>
+        
+            {# In the "Email Monitoring" card #}
+<div class="col-lg-4 col-md-6 mb-4">
+    <div class="card shadow-sm h-100">
+        <div class="card-header bg-light"><i class="fas fa-envelope-open-text me-2"></i>Email Monitoring</div>
+        <div class="card-body d-flex flex-column">
+            <p class="flex-grow-1">Configure email servers and track user emails.</p>
+            <div class="mt-auto">
+                <a href="{% url 'mail_monitor:admin_inbox' %}" class="btn btn-primary"><i class="fas fa-inbox me-1"></i> Track Emails</a>
+                
+                {# --- NEW BUTTON/LINK --- #}
+                <a href="{% url 'mail_monitor:admin_monitoring_status' %}" class="btn btn-outline-secondary ms-2" title="View setup status for all users">
+                    <i class="fas fa-user-check"></i> Status
+                </a>
+                
+                <a href="{% url 'mail_monitor:admin_config' %}" class="btn btn-sm btn-light border ms-2" title="Change company-wide email server settings">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+        {% endif %}
+    </div>
+
+    {# --- User Management Tables --- #}
+    <!-- Pending User Approvals -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light"><i class="fas fa-user-clock me-2"></i>Pending User Approvals</div>
+        <div class="card-body card-body-condensed">
+            {% if pending_users %}
+                <ul class="list-group list-group-flush">
+                    {% for user_to_approve in pending_users %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <div>{{ user_to_approve.get_full_name }} ({{ user_to_approve.email }})
+                                {% if is_superadmin_view and user_to_approve.company_admin %}<br><small class="text-muted">For Admin: {{ user_to_approve.company_admin.email }}</small>{% endif %}
+                            </div>
+                            <div class="action-buttons">
+                                {% if is_admin_role_view and not can_approve_more_flag %} 
+                                    <button class="btn btn-sm btn-success" disabled title="User limit reached"><i class="fas fa-check-circle"></i> Approve</button>
+                                {% else %} 
+                                    <a href="{% url 'accounts:approve_user' user_to_approve.id %}" class="btn btn-sm btn-success"><i class="fas fa-check-circle"></i> Approve</a> 
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %} <p class="text-muted my-2">No new users are awaiting approval.</p> {% endif %}
+        </div>
+    </div>
+
+    <!-- Add New User Form -->
+    {% if is_admin_role_view and can_approve_more_flag %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light"><i class="fas fa-user-plus me-2"></i>Add New User to Your Company</div>
+        <div class="card-body card-body-condensed">
+            <form method="post" action="{% url 'accounts:admin_add_user' %}"> 
+                {% csrf_token %} 
+                {{ add_user_form|crispy }} 
+                <button type="submit" class="btn btn-primary mt-2"><i class="fas fa-plus-circle"></i> Add User</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+    <!-- Managed Users Table -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light"><i class="fas fa-users me-2"></i>Managed Users</div>
+        <div class="card-body card-body-condensed">
+            {% if managed_users %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                {% if is_superadmin_view %}<th>Company Admin</th>{% endif %}
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for m_user in managed_users %}
+                            <tr>
+                                <td>{{ m_user.get_full_name }}</td>
+                                <td>{{ m_user.email }}</td>
+                                {% if is_superadmin_view %}<td>{{ m_user.company_admin.email|default:"N/A" }}</td>{% endif %}
+                                <td>{% if m_user.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Inactive</span>{% endif %}</td>
+                                <td class="action-buttons text-center">
+                                    <a href="{% url 'accounts:admin_view_user_detail' m_user.id %}" class="btn btn-sm btn-outline-primary" title="View Activity Dashboard">
+                                        <i class="fas fa-desktop"></i>
+                                    </a>
+                                    <a href="{% url 'mail_monitor:admin_user_inbox' m_user.id %}" class="btn btn-sm btn-outline-info" title="View Email Inbox">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                    {% if m_user.is_active %}
+                                        <a href="{% url 'accounts:admin_deactivate_user' m_user.id %}" class="btn btn-sm btn-outline-warning" title="Deactivate User">
+                                            <i class="fas fa-user-slash"></i>
+                                        </a>
+                                    {% else %}
+                                        {% if is_superadmin_view or is_admin_role_view and can_approve_more_flag %}
+                                            <a href="{% url 'accounts:admin_activate_user' m_user.id %}" class="btn btn-sm btn-outline-success" title="Activate User">
+                                                <i class="fas fa-user-check"></i>
+                                            </a>
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-success" disabled title="Cannot activate: Limit reached">
+                                                <i class="fas fa-user-check"></i>
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %} <p class="text-muted my-2">No users are currently managed.</p> {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

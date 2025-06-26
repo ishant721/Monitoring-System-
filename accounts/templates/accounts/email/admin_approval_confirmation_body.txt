@@ -1,0 +1,9 @@
+Hi {{ approved_admin_user.get_full_name }},
+
+Congratulations! Your Admin (Company) account for '{{ approved_admin_user.email }}' on {{ site_name }} has been approved by a Superadmin.
+
+You can now log in to your account and start managing your company's users:
+{{ login_link }}
+
+Welcome aboard!
+The {{ site_name }} Team

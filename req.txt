@@ -1,0 +1,15 @@
+django
+dotenv
+django 
+djangorestframework 
+django-cors-headers 
+Pillow
+channels
+daphne
+djangorestframework-simplejwt
+django
+django-crispy-forms
+crispy-bootstrap5
+channels_redis
+django-jazzmin
+bs4

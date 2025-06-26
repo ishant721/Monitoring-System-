@@ -1,0 +1,1 @@
+Your User Account on {{ site_name }} Has Been Approved!

