@@ -1,5 +1,5 @@
 # monitor_app/api/views.py
-
+import logging
 from django.db.models import Subquery, OuterRef
 from django.conf import settings
 from django.shortcuts import get_object_or_404
@@ -59,23 +59,30 @@ def get_config_api(request):
 class RecordingUploadAPIView(APIView):
     authentication_classes = [AgentAPIKeyAuthentication]
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = []  # Allow access with API key authentication
     
     def post(self, request, *args, **kwargs):
         import logging
         logger = logging.getLogger(__name__)
         
         try:
-            # Try to get agent_id from request data first, then from headers
-            agent_id = request.data.get('agent_id') or request.META.get('HTTP_X_AGENT_ID')
+            # Get agent_id from authentication middleware
+            agent_id = getattr(request, 'agent_id', None)
+            if not agent_id:
+                # Fallback to request data
+                agent_id = request.data.get('agent_id')
+            
             video_file = request.FILES.get('video_file')
             
             logger.info(f"Upload attempt - Agent ID: {agent_id}, File: {video_file.name if video_file else 'None'}")
+            logger.info(f"Request data: {dict(request.data)}")
+            logger.info(f"Request files: {list(request.FILES.keys())}")
             
             if not agent_id:
-                logger.error(f"Missing agent ID: {agent_id}")
+                logger.error("Missing agent ID in request")
                 return Response({"error": "Agent ID is required."}, status=status.HTTP_400_BAD_REQUEST)
             
-            # Check if agent exists
+            # Get the agent object
             try:
                 agent = Agent.objects.get(agent_id=agent_id)
                 logger.info(f"Found agent: {agent}")
@@ -83,29 +90,37 @@ class RecordingUploadAPIView(APIView):
                 logger.error(f"Agent not found: {agent_id}")
                 return Response({"error": f"Agent {agent_id} not found."}, status=status.HTTP_404_NOT_FOUND)
             
-            # For local storage mode, we just log the recording info without storing the file
+            # Get filename
             filename = video_file.name if video_file else request.data.get('filename', 'unknown_recording.mp4')
             file_size = video_file.size if video_file else request.data.get('file_size', 0)
             
-            # Create a recorded video entry with just metadata (no file storage)
-            recorded_video = RecordedVideo.objects.create(
-                agent=agent, 
-                filename=filename,
-                # Don't store video_file since it's saved locally
-            )
+            logger.info(f"Processing recording - Filename: {filename}, File size: {file_size}")
             
-            logger.info(f"Recording logged successfully - ID: {recorded_video.id}, Filename: {filename}, Size: {file_size} bytes")
-            
-            return Response({
-                "message": "Recording logged successfully.",
-                "video_id": recorded_video.id,
-                "filename": filename,
-                "local_storage": True
-            }, status=status.HTTP_201_CREATED)
+            # Create recorded video entry
+            try:
+                recorded_video = RecordedVideo.objects.create(
+                    agent=agent,
+                    filename=filename,
+                    video_file=video_file if video_file else None
+                )
+                
+                storage_type = "Server" if video_file else "Local"
+                logger.info(f"Recording saved to database - ID: {recorded_video.id}, Storage: {storage_type}")
+                
+                return Response({
+                    "message": "Recording processed successfully.",
+                    "video_id": recorded_video.id,
+                    "filename": filename,
+                    "storage_type": storage_type
+                }, status=status.HTTP_201_CREATED)
+                
+            except Exception as db_error:
+                logger.error(f"Database error creating RecordedVideo: {str(db_error)}", exc_info=True)
+                return Response({"error": f"Database error: {str(db_error)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Exception as e:
-            logger.error(f"Error during recording log: {str(e)}", exc_info=True)
-            return Response({"error": f"Failed to log recording: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error processing recording upload: {str(e)}", exc_info=True)
+            return Response({"error": f"Failed to process recording: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ==============================================================================

@@ -624,7 +624,7 @@ async def upload_recording_file(file_path):
             loop = asyncio.get_running_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: requests.post(f"{BACKEND_URL}/monitor/api/upload_recording/", files=files, data=data, headers=headers, timeout=600)
+                lambda: requests.post(f"{BACKEND_URL}/api/upload_recording/", files=files, data=data, headers=headers, timeout=600)
             )
         response.raise_for_status()
         print(f"Successfully uploaded {os.path.basename(file_path)}. Server response: {response.status_code}")
@@ -827,7 +827,16 @@ async def websocket_message_handler():
                             current_schedule = data.get("schedule")
                             print(f"Updated monitoring schedule from global config: {current_schedule}")
 
-                        await send_control_response(True, "Global config updated.")
+                        # Save updated config locally
+                        save_local_config()
+                        await send_control_response(True, "Global config updated and saved locally.")
+
+                    elif action == "refresh_config":
+                        print("Received config refresh command")
+                        await fetch_config()
+                        await send_control_response(True, "Configuration refreshed from server.")
+
+
 
                     else:
                         await send_control_response(False, f"Unknown control command: Type={data.get('type')}, Bundle={feature_bundle}, Action={action}")
@@ -880,8 +889,8 @@ async def send_heartbeat():
 
         app_name, website_url = get_active_window_info()
 
-        if not is_recording:
-            screenshot_base64 = capture_screenshot_base64()
+        # Always capture screenshots during active monitoring, even when recording
+        screenshot_base64 = capture_screenshot_base64()
     else:
         key_stroke_count = 0
         mouse_event_count = 0
@@ -940,25 +949,94 @@ async def fetch_config():
     global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule
 
     try:
-        headers = {"X-API-KEY": API_KEY}
-        response = requests.get(f"{BACKEND_URL}/api/config/", headers=headers, timeout=5)
+        headers = {"X-API-KEY": API_KEY, "X-AGENT-ID": AGENT_ID}
+        response = requests.get(f"{BACKEND_URL}/api/config/", headers=headers, timeout=10)
         response.raise_for_status()
         config_data = response.json()
 
-        new_interval_s = config_data.get("capture_interval", 10)
-        current_interval_ms = new_interval_s * 1000
+          # Apply agent-specific config first
+        agent_config = config_data.get("agent_config", {})
+        if agent_config:
+            new_interval_s = agent_config.get("capture_interval_seconds", 10)
+            current_interval_ms = new_interval_s * 1000
+            
+            is_activity_monitoring_enabled_by_control = agent_config.get("is_activity_monitoring_enabled", True)
+            is_network_monitoring_enabled_by_control = agent_config.get("is_network_monitoring_enabled", True)
+            
+            # Apply schedule if available
+            if agent_config.get("schedule"):
+                current_schedule = agent_config.get("schedule")
+                
+            print(f"Applied agent-specific config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
+        else:
+            # Fallback to global config
+            new_interval_s = config_data.get("capture_interval", 10)
+            current_interval_ms = new_interval_s * 1000
+            
+            is_activity_monitoring_enabled_by_control = config_data.get("activity_monitoring_enabled", True)
+            is_network_monitoring_enabled_by_control = config_data.get("network_monitoring_enabled", True)
+            current_schedule = config_data.get("schedule", current_schedule)
+            
+            print(f"Applied global config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
 
-        is_activity_monitoring_enabled_by_control = config_data.get("activity_monitoring_enabled", True)
-        is_network_monitoring_enabled_by_control = config_data.get("network_monitoring_enabled", True)
-        current_schedule = config_data.get("schedule", current_schedule)
-
-        print(f"Fetched config: Interval {new_interval_s} seconds.")
-        print(f"Activity Monitoring Enabled: {is_activity_monitoring_enabled_by_control}")
-        print(f"Network Monitoring Enabled: {is_network_monitoring_enabled_by_control}")
+        # Save config locally for offline use
+        save_local_config()
+        
         print(f"Monitoring Schedule: {current_schedule}")
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching config, will use defaults. Error: {e}")
+        print(f"Error fetching config from server, loading local config. Error: {e}")
+        load_local_config()
+    except Exception as e:
+        print(f"General error fetching config, loading local config: {e}")
+        load_local_config()
+
+def load_local_config():
+    """Load settings from local file when server is unavailable"""
+    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule
+    
+    try:
+        config_file_path = "local_agent_config.json"
+        if getattr(sys, 'frozen', False):
+            config_file_path = os.path.join(os.path.dirname(sys.executable), "local_agent_config.json")
+            
+        if os.path.exists(config_file_path):
+            with open(config_file_path, 'r') as f:
+                local_config = json.load(f)
+                
+            current_interval_ms = local_config.get("capture_interval_seconds", 10) * 1000
+            is_activity_monitoring_enabled_by_control = local_config.get("is_activity_monitoring_enabled", True)
+            is_network_monitoring_enabled_by_control = local_config.get("is_network_monitoring_enabled", True)
+            current_schedule = local_config.get("schedule", current_schedule)
+            
+            last_updated = local_config.get("last_updated", 0)
+            print(f"Loaded local config (last updated: {datetime.datetime.fromtimestamp(last_updated)})")
+            print(f"Interval: {current_interval_ms//1000}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
+        else:
+            print("No local config found, using defaults")
+    except Exception as e:
+        print(f"Error loading local config: {e}")
+
+
+def save_local_config():
+    """Save current settings to local file for offline use"""
+    try:
+        local_config = {
+            "capture_interval_seconds": current_interval_ms // 1000,
+            "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
+            "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
+            "schedule": current_schedule,
+            "last_updated": time.time()
+        }
+        
+        config_file_path = "local_agent_config.json"
+        if getattr(sys, 'frozen', False):
+            config_file_path = os.path.join(os.path.dirname(sys.executable), "local_agent_config.json")
+            
+        with open(config_file_path, 'w') as f:
+            json.dump(local_config, f, indent=2)
+        print(f"Config saved locally to {config_file_path}")
     except Exception as e:
         print(f"General error fetching config: {e}")
 
@@ -982,6 +1060,10 @@ async def run_monitoring_loop(config, agent_id):
 
     await fetch_config()
 
+    # Schedule periodic config refresh every 5 minutes
+    last_config_fetch = time.time()
+    CONFIG_REFRESH_INTERVAL = 300  # 5 minutes
+
     print(f"--- Monitoring Mode for Agent ID: {agent_id} ---")
 
     while True:
@@ -998,6 +1080,11 @@ async def run_monitoring_loop(config, agent_id):
                 message_handler_task = asyncio.create_task(websocket_message_handler())
 
                 while True:
+                    current_time = time.time()
+                    if current_time - last_config_fetch > CONFIG_REFRESH_INTERVAL:
+                        print("Refreshing configuration from server...")
+                        await fetch_config()
+                        last_config_fetch = current_time
                     await send_heartbeat()
 
                     interval_seconds = current_interval_ms / 1000

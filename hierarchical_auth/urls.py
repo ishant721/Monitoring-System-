@@ -31,6 +31,8 @@ urlpatterns = [
     # It will handle URLs like /monitor/dashboard/, /monitor/api/agents/status/, etc.
     path('monitor/', include('monitor_app.urls', namespace='monitor_app')),
 
+    # Include API URLs without namespace to avoid conflicts
+    path('api/', include('monitor_app.api.urls')),
     path('mail/', include('mail_monitor.urls')),
 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

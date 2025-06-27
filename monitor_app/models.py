@@ -113,7 +113,7 @@ class RecordedVideo(models.Model):
     """Stores metadata and a file path for an uploaded screen recording."""
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='recorded_videos')
     filename = models.CharField(max_length=255)
-    video_file = models.FileField(upload_to=video_upload_path)
+    video_file = models.FileField(upload_to=video_upload_path, blank=True, null=True)
     upload_time = models.DateTimeField(auto_now_add=True)
     duration_seconds = models.IntegerField(blank=True, null=True)
 

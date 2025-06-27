@@ -1,0 +1,36 @@
+{
+  "capture_interval_seconds": 50,
+  "is_activity_monitoring_enabled": true,
+  "is_network_monitoring_enabled": true,
+  "schedule": {
+    "monday": {
+      "start": null,
+      "end": null
+    },
+    "tuesday": {
+      "start": null,
+      "end": null
+    },
+    "wednesday": {
+      "start": null,
+      "end": null
+    },
+    "thursday": {
+      "start": null,
+      "end": null
+    },
+    "friday": {
+      "start": "11:48",
+      "end": "11:54"
+    },
+    "saturday": {
+      "start": null,
+      "end": null
+    },
+    "sunday": {
+      "start": null,
+      "end": null
+    }
+  },
+  "last_updated": 1751004994.525414
+}
