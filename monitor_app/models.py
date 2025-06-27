@@ -111,7 +111,7 @@ class AgentData(models.Model):
 
 class RecordedVideo(models.Model):
     """Stores metadata and a file path for an uploaded screen recording."""
-    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='videos')
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='recorded_videos')
     filename = models.CharField(max_length=255)
     video_file = models.FileField(upload_to=video_upload_path)
     upload_time = models.DateTimeField(auto_now_add=True)
@@ -119,6 +119,7 @@ class RecordedVideo(models.Model):
 
     class Meta:
         ordering = ['-upload_time']
+        verbose_name_plural = 'Recorded Videos'
 
 # monitor_app/models.py
 from django.db import models

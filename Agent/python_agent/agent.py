@@ -23,15 +23,14 @@ import pyscreeze
 from pynput import keyboard, mouse
 from websockets.protocol import State
 
-
-import time
+# Global timing variables
 last_key_time = {}
 
 CONFIG_FILE = "config.ini"
 AGENT_ID_FILE = "agent_id.dat"
 
 # --- CONFIGURATION (Global Variables - MUST BE AT THE TOP) ---
-config = configparser.ConfigParser()  # File to store the agent's permanent ID after pairing
+config = configparser.ConfigParser()
 HEARTBEAT_INTERVAL = 15
 
 if getattr(sys, 'frozen', False):
@@ -64,8 +63,7 @@ mouse_event_count = 0
 typed_keys_string = ""
 last_upload_bytes = 0
 last_download_bytes = 0
-# NEW: This variable now fully controls the data capture interval and is updated remotely.
-current_interval_ms = 10000 # Default interval in milliseconds (10 seconds)
+current_interval_ms = 10000  # Default interval in milliseconds (10 seconds)
 
 # --- WebSocket Client Global Variable ---
 websocket_client = None
@@ -79,13 +77,12 @@ recording_output_file = None
 ffmpeg_log_file = None
 
 # --- Feature Bundle Flags ---
-is_activity_monitoring_enabled_by_control = True # Controlled by dashboard actions
-is_network_monitoring_enabled_by_control = True  # Controlled by dashboard actions
-# REMOVED: is_random_screenshot_enabled_by_control flag is no longer needed.
+is_activity_monitoring_enabled_by_control = True
+is_network_monitoring_enabled_by_control = True
 
-# --- NEW: Scheduling Variables ---
-is_agent_active_by_schedule = True # This flag will be updated based on the schedule
-current_schedule = { # Default empty schedule (means always active)
+# --- Scheduling Variables ---
+is_agent_active_by_schedule = True
+current_schedule = {
     "monday": {"start": None, "end": None},
     "tuesday": {"start": None, "end": None},
     "wednesday": {"start": None, "end": None},
@@ -95,7 +92,10 @@ current_schedule = { # Default empty schedule (means always active)
     "sunday": {"start": None, "end": None},
 }
 
-
+# --- Global configuration variables ---
+BACKEND_URL = ""
+API_KEY = ""
+AGENT_ID = ""
 
 # --- FFmpeg Path ---
 FFMPEG_EXECUTABLE_NAME = ""
@@ -117,6 +117,16 @@ else:
 # --- Productive Status Thresholds ---
 PRODUCTIVITY_THRESHOLD_HIGH = 10
 PRODUCTIVITY_THRESHOLD_LOW = 2
+
+# --- Launch Agent Constants (for macOS) ---
+LAUNCH_AGENT_LABEL = "com.mycompany.agent"
+LAUNCH_AGENT_PLIST_PATH = os.path.expanduser(f"~/Library/LaunchAgents/{LAUNCH_AGENT_LABEL}.plist")
+LAUNCH_AGENT_LOG_DIR = os.path.expanduser("~/Library/Logs/MyAgent")
+LAUNCH_AGENT_LOG_PATH = os.path.join(LAUNCH_AGENT_LOG_DIR, "agent.log")
+
+# --- Local Recordings Directory ---
+LOCAL_RECORDINGS_TEMP_DIR = "/Users/ishantsingh/Downloads/Monitoring-System--main-1/media/recordings"
+os.makedirs(LOCAL_RECORDINGS_TEMP_DIR, exist_ok=True)
 
 def load_config():
     config = configparser.ConfigParser()
@@ -145,88 +155,6 @@ def save_persistent_agent_id(agent_id):
         f.write(agent_id)
     print(f"Agent successfully paired. Permanent ID '{agent_id}' saved to {AGENT_ID_FILE}")
 
-def get_active_window_info():
-    """
-    This function is critical. Please ensure your original, full, platform-specific
-    implementation is used here for correct app and URL detection.
-    """
-    app_name, website_url = "Unknown", ""
-    try:
-        if sys.platform == "darwin": # macOS
-            # Your full macOS AppleScript logic here
-            pass
-        elif sys.platform == "win32": # Windows
-            # Your full Windows ctypes logic here
-            pass
-        elif sys.platform == "linux": # Linux
-            # Your full Linux xdotool logic here
-            pass
-    except Exception as e:
-        app_name = f"Error getting window info"
-    return app_name, website_url
-
-# --- INPUT MONITORING CALLBACKS (pynput) ---
-# In agent.py
-def is_messaging_app(app_name, url):
-    """Checks if the app name or URL corresponds to a known messaging app."""
-    if app_name:
-        app_lower = app_name.lower()
-        for keyword in MESSAGING_APP_KEYWORDS:
-            if keyword in app_lower:
-                return True
-    if url:
-        url_lower = url.lower()
-        for keyword in MESSAGING_APP_KEYWORDS:
-            if keyword in url_lower:
-                return True
-    return False
-
-def on_key_press(key):
-    global key_stroke_count, key_log_buffer, last_key_time
-    key_stroke_count += 1
-    app_name, website_url = get_active_window_info()
-    source_id = website_url or app_name or "Unknown"
-
-    if source_id not in key_log_buffer:
-        key_log_buffer[source_id] = {
-            'keys': [],
-            'is_messaging': is_messaging_app(app_name, website_url)
-        }
-
-    try:
-        key_str = key.char
-    except AttributeError:
-        key_str = f'[{str(key).replace("Key.", "").upper()}]'
-
-    # Optional deduplication logic (within 0.1s)
-    now = time.time()
-    if last_key_time.get(source_id, {}).get(key_str, 0) + 0.1 > now:
-        return  # skip duplicate key
-    last_key_time.setdefault(source_id, {})[key_str] = now
-
-    key_log_buffer[source_id]['keys'].append(key_str)
-
-
-def on_click(x, y, button, pressed):
-    """Callback for mouse click events."""
-    global mouse_event_count
-    if pressed:
-        mouse_event_count += 1
-
-def on_scroll(x, y, dx, dy):
-    """Callback for mouse scroll events."""
-    global mouse_event_count
-    mouse_event_count += 1
-
-def end_typing_session():
-    """Finalizes the current session and moves it to the send queue."""
-    global current_typing_session, completed_sessions_queue
-    if current_typing_session and current_typing_session.get('keys'):
-        print(f"INFO: Typing session for '{current_typing_session['source']}' ended. Queued for sending.")
-        completed_sessions_queue.append(current_typing_session)
-    current_typing_session = {} # Clear the current session
-
-# --- PLATFORM-SPECIFIC HELPER FUNCTIONS (unchanged) ---
 def execute_osascript(script):
     """Helper to execute AppleScript on macOS and capture errors."""
     try:
@@ -273,8 +201,6 @@ def get_active_window_info():
                 if is_running.lower() == "true":
                     url_script = 'tell application "Safari" to get URL of front document'
                     website_url = execute_osascript(url_script)
-                    if website_url:
-                        pass
 
             elif app_name == "Firefox":
                 is_running = execute_osascript('tell application "Firefox" to get running')
@@ -340,14 +266,66 @@ def get_active_window_info():
 
     return app_name, website_url
 
-# This function remains for screen recording, but is no longer used for random screenshots
-# In agent.py
+def is_messaging_app(app_name, url):
+    """Checks if the app name or URL corresponds to a known messaging app."""
+    if app_name:
+        app_lower = app_name.lower()
+        for keyword in MESSAGING_APP_KEYWORDS:
+            if keyword in app_lower:
+                return True
+    if url:
+        url_lower = url.lower()
+        for keyword in MESSAGING_APP_KEYWORDS:
+            if keyword in url_lower:
+                return True
+    return False
 
-# In agent.py
+def on_key_press(key):
+    global key_stroke_count, key_log_buffer, last_key_time, typed_keys_string
+    key_stroke_count += 1
+    app_name, website_url = get_active_window_info()
+    source_id = website_url or app_name or "Unknown"
 
-# =================================================================
-# NEW AND IMPROVED CROSS-PLATFORM SCREENSHOT FUNCTION (ROBUST VERSION)
-# =================================================================
+    if source_id not in key_log_buffer:
+        key_log_buffer[source_id] = {
+            'keys': [],
+            'is_messaging': is_messaging_app(app_name, website_url)
+        }
+
+    try:
+        key_str = key.char
+        if key_str and key_str.isprintable():
+            typed_keys_string += key_str
+    except AttributeError:
+        key_str = f'[{str(key).replace("Key.", "").upper()}]'
+
+    # Optional deduplication logic (within 0.1s)
+    now = time.time()
+    if last_key_time.get(source_id, {}).get(key_str, 0) + 0.1 > now:
+        return  # skip duplicate key
+    last_key_time.setdefault(source_id, {})[key_str] = now
+
+    key_log_buffer[source_id]['keys'].append(key_str)
+
+def on_click(x, y, button, pressed):
+    """Callback for mouse click events."""
+    global mouse_event_count
+    if pressed:
+        mouse_event_count += 1
+
+def on_scroll(x, y, dx, dy):
+    """Callback for mouse scroll events."""
+    global mouse_event_count
+    mouse_event_count += 1
+
+def end_typing_session():
+    """Finalizes the current session and moves it to the send queue."""
+    global current_typing_session, completed_sessions_queue
+    if current_typing_session and current_typing_session.get('keys'):
+        print(f"INFO: Typing session for '{current_typing_session['source']}' ended. Queued for sending.")
+        completed_sessions_queue.append(current_typing_session)
+    current_typing_session = {}
+
 def capture_screenshot_base64():
     """
     Captures a screenshot and returns ONLY the raw Base64 encoded string.
@@ -355,7 +333,7 @@ def capture_screenshot_base64():
     """
     try:
         with mss.mss() as sct:
-            sct_img = sct.grab(sct.monitors[1]) # Primary monitor
+            sct_img = sct.grab(sct.monitors[1])  # Primary monitor
 
             # Convert to a PIL Image object
             img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
@@ -363,71 +341,13 @@ def capture_screenshot_base64():
             # Save the image to a memory buffer
             buffered = io.BytesIO()
             img.save(buffered, format="PNG")
-            
+
             # Encode the buffer's content to Base64 and return JUST the string
             return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
     except Exception as e:
         print(f"ERROR: An unexpected error occurred during screenshot capture: {e}")
         return None
-# =================================================================# =================================================================
-
-
-
-# def capture_screenshot_base64():
-#     """
-#     Captures a screenshot using macOS's native `screencapture` command-line tool.
-#     This is the most reliable method and bypasses many library/permission issues.
-#     """
-#     # This function is designed for macOS only.
-#     if platform.system() != "Darwin":
-#         print("WARNING: Native screencapture is a macOS-only function. Skipping screenshot.")
-#         return None
-
-    # Create a temporary file path in the system's temp directory
-    temp_screenshot_path = os.path.join(tempfile.gettempdir(), f"temp_ss_{uuid.uuid4()}.png")
-
-    try:
-        # 1. Use the native `screencapture` command.
-        #    -x: Do not play the camera shutter sound.
-        #    -t png: Save in PNG format.
-        #    The final argument is the output file path.
-        subprocess.run(
-            ['screencapture', '-x', '-t', 'png', temp_screenshot_path],
-            check=True, # This will raise an error if the command fails
-            timeout=5   # Failsafe timeout
-        )
-
-        # 2. Verify the file was created.
-        if not os.path.exists(temp_screenshot_path):
-            raise FileNotFoundError("screencapture command ran but did not create the file.")
-
-        # 3. Read the raw bytes from the file.
-        with open(temp_screenshot_path, "rb") as image_file:
-            img_bytes = image_file.read()
-
-        # 4. Encode the clean bytes into base64.
-        encoded_str = base64.b64encode(img_bytes).decode('utf-8')
-        
-        return f"data:image/png;base64,{encoded_str}"
-
-    except FileNotFoundError:
-        # This can happen if the 'screencapture' command itself is not found, which is almost impossible on macOS.
-        print("ERROR: The 'screencapture' command was not found.")
-        return None
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: The 'screencapture' command failed with exit code {e.returncode}.")
-        return None
-    except subprocess.TimeoutExpired:
-        print("ERROR: The 'screencapture' command timed out.")
-        return None
-    except Exception as e:
-        print(f"An unexpected error occurred during native screenshot capture: {e}")
-        return None
-    finally:
-        # 5. Clean up the temporary file.
-        if os.path.exists(temp_screenshot_path):
-            os.remove(temp_screenshot_path)
 
 def capture_raw_frame():
     try:
@@ -439,16 +359,12 @@ def capture_raw_frame():
         print(f"Error capturing raw frame: {e}")
         return None, (0, 0)
 
-# In agent.py
-
 def get_total_bandwidth_usage():
     """Gets total bytes sent and received from all network interfaces."""
     try:
-        # This returns a named tuple with .bytes_sent and .bytes_recv
         return psutil.net_io_counters()
     except Exception as e:
         print(f"Error getting bandwidth, returning zero values: {e}")
-        # Return a compatible object with default values
         return psutil._common.snetio(bytes_sent=0, bytes_recv=0, packets_sent=0, packets_recv=0, errin=0, errout=0, dropin=0, dropout=0)
 
 def get_network_type():
@@ -474,7 +390,7 @@ def get_network_type():
                 if not has_real_address:
                     continue
 
-                if platform.system() == "Darwin": # macOS
+                if platform.system() == "Darwin":  # macOS
                     if iface_name.startswith("en"):
                         output = subprocess.getoutput('networksetup -listallhardwareports')
                         if "Wi-Fi" in output and f"Device: {iface_name}" in subprocess.getoutput(f'networksetup -getmacaddress "{iface_name}"').strip():
@@ -518,12 +434,6 @@ def get_network_type():
         print(f"Error getting network type: {e}")
         return "Unknown"
 
-# --- Recording Functions (unchanged) ---
-
-LOCAL_RECORDINGS_TEMP_DIR = os.path.expanduser("~/Library/Application Support/MyAgentTempRecordings")
-os.makedirs(LOCAL_RECORDINGS_TEMP_DIR, exist_ok=True)
-
-
 async def pair_with_server(config):
     """Handles the one-time pairing process for a new agent installation."""
     print("--- Agent First-Time Setup: Pairing Mode ---")
@@ -535,7 +445,7 @@ async def pair_with_server(config):
     new_agent_id = str(uuid.uuid4())
     base_ws_url = config['base_url'].replace('http', 'ws', 1)
     pairing_url = f"{base_ws_url}/monitor/ws/agent/pairing/"
-    
+
     print(f"Connecting to {pairing_url} to pair with new ID: {new_agent_id}")
     try:
         async with websockets.connect(pairing_url) as websocket:
@@ -557,8 +467,6 @@ async def pair_with_server(config):
     except Exception as e:
         print(f"An error occurred during the pairing process: {e}")
         return None
-
-
 
 async def _start_recording_loop(output_path, fps=15):
     """Internal function to run the screen capture and FFmpeg process."""
@@ -650,7 +558,6 @@ async def _start_recording_loop(output_path, fps=15):
             print(f"Recording file not found or is empty after stopping: {output_path}")
             await send_control_response(False, f"Recording stopped but file empty/missing: {os.path.basename(output_path)}")
 
-
 async def start_recording():
     global is_recording, recording_task, recording_output_file
 
@@ -659,7 +566,6 @@ async def start_recording():
         await send_control_response(False, "Recording already active.")
         return
 
-    # MODIFIED: Check schedule before allowing recording to start
     if not is_agent_active_by_schedule:
         print("Recording commands ignored: Agent is currently outside active schedule.")
         await send_control_response(False, "Recording ignored: Outside active schedule.")
@@ -669,13 +575,11 @@ async def start_recording():
     is_recording = True
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
     recording_output_file = os.path.join(LOCAL_RECORDINGS_TEMP_DIR, f"{AGENT_ID}_recording_{timestamp}.mp4")
 
     recording_task = asyncio.create_task(_start_recording_loop(recording_output_file))
     print(f"Recording task launched to: {recording_output_file}")
     await send_control_response(True, f"Recording started to {os.path.basename(recording_output_file)}")
-
 
 async def stop_recording():
     global is_recording, ffmpeg_process, recording_task, recording_output_file
@@ -698,7 +602,6 @@ async def stop_recording():
 
     recording_output_file = None
 
-
 async def upload_recording_file(file_path):
     print(f"Attempting to upload recording: {file_path}")
     if not os.path.exists(file_path):
@@ -715,12 +618,13 @@ async def upload_recording_file(file_path):
     try:
         with open(file_path, 'rb') as f:
             files = {'video_file': (os.path.basename(file_path), f, 'video/mp4')}
+            data = {'agent_id': AGENT_ID}
             headers = {"X-API-KEY": API_KEY, "X-AGENT-ID": AGENT_ID}
 
             loop = asyncio.get_running_loop()
             response = await loop.run_in_executor(
                 None,
-                lambda: requests.post(f"{BACKEND_URL}/api/upload_recording/", files=files, headers=headers, timeout=600)
+                lambda: requests.post(f"{BACKEND_URL}/monitor/api/upload_recording/", files=files, data=data, headers=headers, timeout=600)
             )
         response.raise_for_status()
         print(f"Successfully uploaded {os.path.basename(file_path)}. Server response: {response.status_code}")
@@ -734,7 +638,6 @@ async def upload_recording_file(file_path):
     except Exception as e:
         print(f"General error during recording upload: {e}")
         await send_control_response(False, f"Upload failed (internal error): {os.path.basename(file_path)} - {str(e)}")
-
 
 async def send_control_response(status_ok, message):
     """Helper to send a control response back to the backend."""
@@ -750,8 +653,6 @@ async def send_control_response(status_ok, message):
             await websocket_client.send(json.dumps(response_message))
         except Exception as e:
             print(f"Failed to send control response: {e}")
-
-
 
 def install_launch_agent():
     if not (getattr(sys, 'frozen', False) and platform.system() == "Darwin"):
@@ -804,10 +705,6 @@ def install_launch_agent():
     except Exception as e:
         print(f"Error installing launch agent: {e}")
 
-
-# --- API and WebSocket Communication Functions (unchanged) ---
-
-
 async def disconnect_websocket():
     global websocket_client
     if websocket_client and websocket_client.state == State.OPEN:
@@ -815,60 +712,42 @@ async def disconnect_websocket():
         print("WebSocket disconnected.")
     websocket_client = None
 
-
-
 def is_within_active_schedule():
     """
     Checks if the current SYSTEM LOCAL TIME is within the active schedule for the current day.
     Returns True if active, False otherwise.
     """
     global current_schedule
-    
-    if not current_schedule:
-        # If no schedule is configured from the backend, default to always active.
-        return True
-        
-    # --- KEY CHANGE: Use .now() for local time instead of .utcnow() ---
-    now_local = datetime.datetime.now()
-    today_weekday_str = now_local.strftime('%A').lower()  # e.g., 'monday'
 
-    # Get today's schedule from the global config.
+    if not current_schedule:
+        return True
+
+    now_local = datetime.datetime.now()
+    today_weekday_str = now_local.strftime('%A').lower()
+
     day_schedule = current_schedule.get(today_weekday_str, {"start": None, "end": None})
 
     start_time_str = day_schedule.get("start")
     end_time_str = day_schedule.get("end")
 
-    # If no start or end time is defined for today, the agent is active 24/7.
     if not start_time_str or not end_time_str:
         return True
 
     try:
-        # Convert schedule's "HH:MM" strings into datetime.time objects for comparison.
-        # These are treated as "naive" time objects, representing wall-clock time.
         start_time = datetime.datetime.strptime(start_time_str, "%H:%M").time()
         end_time = datetime.datetime.strptime(end_time_str, "%H:%M").time()
 
-        # Get the current time part from the local datetime object.
         current_time = now_local.time()
 
-        # --- Time Comparison Logic ---
-        
-        # Case 1: Normal schedule within the same day (e.g., 09:00 - 17:00)
         if start_time <= end_time:
             return start_time <= current_time <= end_time
-        
-        # Case 2: Overnight schedule that spans midnight (e.g., 22:00 - 06:00)
         else:
-            # The time must be AFTER the start time OR BEFORE the end time.
             return current_time >= start_time or current_time <= end_time
 
     except (ValueError, TypeError) as e:
-        # If the time format in the config is wrong, log a warning and default to active.
         print(f"Warning: Invalid time format in schedule for {today_weekday_str} ('{start_time_str}'-'{end_time_str}'). Error: {e}")
         return True
 
-
-# MODIFIED: WebSocket handler now accepts interval and schedule updates
 async def websocket_message_handler():
     global websocket_client, is_recording, ffmpeg_process, recording_task, \
            is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, \
@@ -935,7 +814,6 @@ async def websocket_message_handler():
 
                     elif action == "set_global_config":
                         print(f"Received global config update via broadcast: {data}")
-                        # NEW: Handle remote interval change
                         if data.get("capture_interval") is not None:
                             current_interval_ms = data.get("capture_interval") * 1000
                             print(f"Updated interval from global config: {current_interval_ms / 1000}s")
@@ -945,7 +823,6 @@ async def websocket_message_handler():
                         if data.get("network_monitoring_enabled") is not None:
                             is_network_monitoring_enabled_by_control = data.get("network_monitoring_enabled")
                             print(f"Updated network monitoring from global config: {is_network_monitoring_enabled_by_control}")
-                        # NEW: Handle remote schedule change
                         if data.get("schedule") is not None:
                             current_schedule = data.get("schedule")
                             print(f"Updated monitoring schedule from global config: {current_schedule}")
@@ -970,9 +847,6 @@ async def websocket_message_handler():
         else:
             await asyncio.sleep(1)
 
-# MODIFIED: send_heartbeat now respects the work schedule
-# In agent.py
-
 async def send_heartbeat():
     """
     Captures all monitored data, assembles it into a single payload,
@@ -982,65 +856,51 @@ async def send_heartbeat():
            is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, \
            current_interval_ms, is_agent_active_by_schedule
 
-    # First, check if the agent is within its scheduled active hours.
     is_agent_active_by_schedule = is_within_active_schedule()
 
-    # If outside the schedule, do nothing and exit the function early.
     if not is_agent_active_by_schedule:
         print(f"Agent is outside of active schedule. Skipping data capture. Current UTC: {datetime.datetime.utcnow().strftime('%H:%M:%S')}")
-        # Reset all counters to prevent them from accumulating during inactive periods.
         key_stroke_count = 0
         mouse_event_count = 0
         typed_keys_string = ""
         return
 
-    # Determine if monitoring features are active (based on global controls).
     is_activity_monitoring_effective = is_activity_monitoring_enabled_by_control
     is_network_monitoring_effective = is_network_monitoring_enabled_by_control
 
-    # Initialize all data variables to default values.
     app_name, website_url, network_type = None, None, None
     screenshot_base64 = None
     upload_delta, download_delta = 0, 0
     productive_status = "N/A"
 
-    # --- Conditionally collect data based on effective monitoring flags ---
-
     if is_activity_monitoring_effective:
-        # Calculate productivity status based on keyboard and mouse events.
         combined_events = key_stroke_count + mouse_event_count
         productive_status = "Productive" if combined_events >= PRODUCTIVITY_THRESHOLD_HIGH else \
                             "Neutral" if combined_events >= PRODUCTIVITY_THRESHOLD_LOW else "Idle"
-        
-        # Get the active application name and browser URL.
+
         app_name, website_url = get_active_window_info()
 
-        # Capture a screenshot, but only if a screen recording is not already active.
         if not is_recording:
             screenshot_base64 = capture_screenshot_base64()
     else:
-        # If activity monitoring is off, ensure counters are zero.
         key_stroke_count = 0
         mouse_event_count = 0
         typed_keys_string = ""
 
     if is_network_monitoring_effective:
-        # Get total network usage and calculate the difference since the last check.
-        current_upload, current_download = get_total_bandwidth_usage()
+        current_net = get_total_bandwidth_usage()
+        current_upload, current_download = current_net.bytes_sent, current_net.bytes_recv
         upload_delta = current_upload - last_upload_bytes
         download_delta = current_download - last_download_bytes
         last_upload_bytes = current_upload
         last_download_bytes = current_download
-        
-        # Get the type of network connection (e.g., Wi-Fi, Ethernet).
+
         network_type = get_network_type()
     else:
-        # If network monitoring is off, usage is zero for this interval.
         upload_delta, download_delta = 0, 0
 
     print(f"Sending data: App='{app_name}' | Keys={key_stroke_count} | Mouse={mouse_event_count} | Typed='{typed_keys_string[:30]}...' | Up={upload_delta} | Down={download_delta} | SS Sent={'Yes' if screenshot_base64 else 'No'}")
 
-    # Assemble the complete data payload for the backend.
     data = {
         "type": "heartbeat",
         "agent_id": AGENT_ID,
@@ -1049,7 +909,7 @@ async def send_heartbeat():
         "screenshot": screenshot_base64,
         "keystroke_count": key_stroke_count,
         "mouse_event_count": mouse_event_count,
-        "typed_keys": typed_keys_string, # Include the keylogger string
+        "typed_keys": typed_keys_string,
         "upload_bytes": upload_delta,
         "download_bytes": download_delta,
         "network_type": network_type,
@@ -1062,23 +922,20 @@ async def send_heartbeat():
     }
 
     try:
-        # Ensure the WebSocket is connected before trying to send.
         if not websocket_client or websocket_client.state != State.OPEN:
              print("WebSocket not connected. Cannot send heartbeat.")
              return
         await websocket_client.send(json.dumps(data))
     except websockets.exceptions.WebSocketException as wse:
         print(f"WebSocket send failed: {wse}. State: {websocket_client.state if websocket_client else 'Closed'}.")
-        websocket_client = None # Trigger reconnect logic in main loop
+        websocket_client = None
     except Exception as e:
         print(f"Error sending data: {e}")
 
-    # IMPORTANT: Reset all interval-specific data for the next cycle.
     key_stroke_count = 0
     mouse_event_count = 0
     typed_keys_string = ""
 
-# MODIFIED: Fetches interval and schedule on startup
 async def fetch_config():
     global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule
 
@@ -1088,13 +945,11 @@ async def fetch_config():
         response.raise_for_status()
         config_data = response.json()
 
-        # Set interval from remote config
         new_interval_s = config_data.get("capture_interval", 10)
         current_interval_ms = new_interval_s * 1000
 
         is_activity_monitoring_enabled_by_control = config_data.get("activity_monitoring_enabled", True)
         is_network_monitoring_enabled_by_control = config_data.get("network_monitoring_enabled", True)
-        # Set schedule from remote config
         current_schedule = config_data.get("schedule", current_schedule)
 
         print(f"Fetched config: Interval {new_interval_s} seconds.")
@@ -1110,51 +965,42 @@ async def fetch_config():
 async def run_monitoring_loop(config, agent_id):
     """
     The main operational loop for an already-paired and registered agent.
-    This function now wraps your existing connection and data sending logic.
     """
-    global websocket_client # Allow this function to modify the global client
+    global websocket_client, AGENT_ID, BACKEND_URL, API_KEY
+
+    AGENT_ID = agent_id
+    BACKEND_URL = config['base_url']
+    API_KEY = config['api_key']
+
     base_ws_url = config['base_url'].replace('http', 'ws', 1)
-    
-    # --- THIS IS THE CORRECT URL ---
-    # It must include the "/monitor/" prefix.
     websocket_url = f"{base_ws_url}/monitor/ws/agent/{agent_id}/"
-    
+
     api_key = config['api_key']
-    
+
     print(f"--- Monitoring Mode for Agent: {agent_id} ---")
-    print(f"Attempting to connect to: {websocket_url}") # Add this for debugging
-    
-    # Initialize your data gathering listeners here
-    keyboard_listener = keyboard.Listener(on_press=on_key_press)
-    mouse_listener = mouse.Listener(on_click=on_click, on_scroll=on_scroll)
-    keyboard_listener.start()
-    mouse_listener.start()
+    print(f"Attempting to connect to: {websocket_url}")
+
+    await fetch_config()
 
     print(f"--- Monitoring Mode for Agent ID: {agent_id} ---")
-    
-    while True: # Main reconnection loop
+
+    while True:
         try:
             async with websockets.connect(websocket_url) as websocket:
-                websocket_client = websocket # Assign to the global variable
+                websocket_client = websocket
                 print(f"Connected to {websocket_url}. Authenticating...")
-                
-                # 1. Authenticate using the master API Key
+
                 auth_payload = {"type": "auth", "api_key": api_key}
                 await websocket.send(json.dumps(auth_payload))
-                
+
                 print("Authentication successful. Starting data submission loop.")
-                
-                # Create a task to handle incoming messages from the server
+
                 message_handler_task = asyncio.create_task(websocket_message_handler())
 
-                # 2. Main operational loop using your existing send_data function
                 while True:
-                    # Your existing send_data function handles all data gathering and sending
-                    await send_data(agent_id) # We pass agent_id to it now
-                    
-                    # The sleep interval can still be controlled by the server
-                    interval_seconds = 15 # Default
-                    # You could fetch current_interval_ms from a global var if your handler modifies it
+                    await send_heartbeat()
+
+                    interval_seconds = current_interval_ms / 1000
                     await asyncio.sleep(interval_seconds)
 
         except websockets.exceptions.ConnectionClosed as e:
@@ -1163,127 +1009,18 @@ async def run_monitoring_loop(config, agent_id):
         except Exception as e:
             print(f"An unexpected error occurred in monitoring loop: {e}. Retrying in 15s...")
             websocket_client = None
-        
+
         await asyncio.sleep(15)
 
-
-
-# In agent.py
-
-async def send_data(agent_id):
-    """
-    Sends all buffered keylogs and the main heartbeat data to the server.
-    This is the primary data submission function.
-    """
-    global key_log_buffer, websocket_client, key_stroke_count, mouse_event_count, \
-           last_upload_bytes, last_download_bytes, is_recording
-    
-    # --- Part 1: Send all buffered keylogs ---
-    if key_log_buffer:
-        # Create a copy to send, then clear the global buffer immediately.
-        logs_to_send = dict(key_log_buffer)
-        key_log_buffer.clear()
-
-        print("\n--- DEBUG AGENT: PREPARING TO SEND KEYLOGS ---")
-        for source_app, log_data in logs_to_send.items():
-            if not log_data.get('keys'):
-                continue
-
-            keylog_payload = {
-                "type": "key_log",
-                "agent_id": agent_id,
-                "source_app": source_app,
-                "key_sequence": "".join(log_data['keys']),
-                "is_messaging": log_data.get('is_messaging', False)
-            }
-            
-            # LOUD PRINT STATEMENT TO VERIFY PAYLOAD
-            print(f"DEBUG AGENT: Assembling keylog_payload: {json.dumps(keylog_payload)}")
-
-            try:
-                if websocket_client and websocket_client.state == State.OPEN:
-                    await websocket_client.send(json.dumps(keylog_payload))
-                    print(f"DEBUG AGENT: Successfully SENT keylog for '{source_app}'")
-            except Exception as e:
-                print(f"DEBUG AGENT: ERROR sending keylog for '{source_app}': {e}")
-        print("--- DEBUG AGENT: FINISHED SENDING KEYLOGS ---\n")
-
-    # --- Part 2: Your existing heartbeat logic ---
-    
-    # Capture the current value of the counters at this moment.
-    current_keystrokes = key_stroke_count
-    current_mouse_events = mouse_event_count
-    
-    # Reset the global counters immediately for the next interval.
-    key_stroke_count = 0
-    mouse_event_count = 0
-
-    # Gather all other data for the main heartbeat.
-    app_name, website_url = get_active_window_info()
-    
-    productive_status = "N/A"
-    if is_activity_monitoring_enabled_by_control:
-        combined_events = current_keystrokes + current_mouse_events
-        if combined_events >= PRODUCTIVITY_THRESHOLD_HIGH: productive_status = "Productive"
-        elif combined_events >= PRODUCTIVITY_THRESHOLD_LOW: productive_status = "Neutral"
-        else: productive_status = "Idle"
-
-    net_io = get_total_bandwidth_usage()
-    upload_delta = net_io.bytes_sent - last_upload_bytes
-    download_delta = net_io.bytes_recv - last_download_bytes
-    last_upload_bytes, last_download_bytes = net_io.bytes_sent, net_io.bytes_recv
-    network_type = get_network_type()
-    
-    screenshot_b64 = capture_screenshot_base64() if is_activity_monitoring_enabled_by_control and not is_recording else None
-    
-    # Assemble the final heartbeat payload.
-    heartbeat_payload = {
-        "type": "heartbeat",
-        "agent_id": agent_id,
-        "window_title": app_name,
-        "active_browser_url": website_url,
-        "keystroke_count": current_keystrokes,
-        "mouse_event_count": current_mouse_events,
-        "upload_bytes": upload_delta,
-        "download_bytes": download_delta,
-        "network_type": network_type,
-        "screenshot": screenshot_b64,
-        "is_recording": is_recording,
-        "productive_status": productive_status,
-        "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
-        "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
-    }
-
-    # Send the main heartbeat.
-    try:
-        if websocket_client and websocket_client.state == State.OPEN:
-            await websocket_client.send(json.dumps(heartbeat_payload))
-            print(f"SUCCESS: Sent heartbeat for {agent_id}. Keys: {current_keystrokes}, Mouse: {current_mouse_events}")
-    except Exception as e:
-        print(f"ERROR sending heartbeat: {e}")
-        websocket_client = None # Signal a broken connection to trigger a reconnect
-
-# --- Main Application Loop ---
-
-# =================================================================
-# ADD THIS NEW FUNCTION
-# =================================================================
 async def main():
     """Orchestrates the agent's startup workflow."""
-    # Create temp directory for recordings if it doesn't exist
     os.makedirs(LOCAL_RECORDINGS_TEMP_DIR, exist_ok=True)
-    # This is for macOS autostart, can be commented out if not needed
-    # install_launch_agent()
 
-    # Step 1: Load the basic configuration (api_key, base_url)
     config = load_config()
-    
-    # Step 2: Check if the agent is already paired by looking for the ID file
+
     agent_id = get_persistent_agent_id()
 
     if agent_id is None:
-        # --- FIRST-RUN SCENARIO ---
-        # The agent is not paired. Start the pairing process.
         newly_paired_id = await pair_with_server(config)
         if newly_paired_id:
             print("\nPairing successful! Agent will now start in monitoring mode.")
@@ -1291,30 +1028,24 @@ async def main():
         else:
             print("\nPairing failed. Please check the token and network, then restart.")
     else:
-        # --- NORMAL SCENARIO ---
-        # The agent is already paired. Start the monitoring loop directly.
         await run_monitoring_loop(config, agent_id)
-# =================================================================
 
-# --- Entry Point ---
 if __name__ == "__main__":
-    # Start your input listeners here, as they are background threads
+    config_data = load_config()
+    BACKEND_URL = config_data['base_url']
+    API_KEY = config_data['api_key']
+
     keyboard_listener = keyboard.Listener(on_press=on_key_press)
-    # Corrected line
     mouse_listener = mouse.Listener(on_click=on_click, on_scroll=on_scroll)
     keyboard_listener.start()
     mouse_listener.start()
-    
+
     try:
-        # Call the new main() function which orchestrates the entire workflow
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\nAgent stopped by user.")
-        # Any final cleanup can be added here if needed
     except Exception as e:
-        # This provides a clearer message for any other startup errors
         print(f"A fatal error occurred: {e}")
     finally:
-        # A clean exit
         print("Agent process terminated.")
         sys.exit(0)

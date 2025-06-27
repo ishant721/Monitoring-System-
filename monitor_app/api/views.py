@@ -30,10 +30,15 @@ from ..authentication import AgentAPIKeyAuthentication
 @api_view(['GET'])
 @authentication_classes([AgentAPIKeyAuthentication])
 @permission_classes([])
-def get_config_api(request, agent_id):
+def get_config_api(request):
     """
-    Called by a specific agent on startup to get its own configuration.
+    Called by agents to get their configuration.
     """
+    # Get agent_id from request headers (set by authentication)
+    agent_id = getattr(request, 'agent_id', None)
+    if not agent_id:
+        return Response({"error": "Agent ID not found in request"}, status=status.HTTP_400_BAD_REQUEST)
+    
     agent = get_object_or_404(Agent, agent_id=agent_id)
     
     # FIX: Perform schedule formatting directly in the view
@@ -54,18 +59,53 @@ def get_config_api(request, agent_id):
 class RecordingUploadAPIView(APIView):
     authentication_classes = [AgentAPIKeyAuthentication]
     parser_classes = (MultiPartParser, FormParser)
+    
     def post(self, request, *args, **kwargs):
-        agent_id = request.data.get('agent_id')
-        video_file = request.FILES.get('video_file')
-        if not agent_id or not video_file:
-            return Response({"error": "Agent ID and video file are required."}, status=status.HTTP_400_BAD_REQUEST)
+        import logging
+        logger = logging.getLogger(__name__)
         
-        agent = get_object_or_404(Agent, agent_id=agent_id)
         try:
-            RecordedVideo.objects.create(agent=agent, filename=video_file.name, video_file=video_file)
-            return Response({"message": "Video uploaded successfully."}, status=status.HTTP_201_CREATED)
+            # Try to get agent_id from request data first, then from headers
+            agent_id = request.data.get('agent_id') or request.META.get('HTTP_X_AGENT_ID')
+            video_file = request.FILES.get('video_file')
+            
+            logger.info(f"Upload attempt - Agent ID: {agent_id}, File: {video_file.name if video_file else 'None'}")
+            
+            if not agent_id:
+                logger.error(f"Missing agent ID: {agent_id}")
+                return Response({"error": "Agent ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check if agent exists
+            try:
+                agent = Agent.objects.get(agent_id=agent_id)
+                logger.info(f"Found agent: {agent}")
+            except Agent.DoesNotExist:
+                logger.error(f"Agent not found: {agent_id}")
+                return Response({"error": f"Agent {agent_id} not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+            # For local storage mode, we just log the recording info without storing the file
+            filename = video_file.name if video_file else request.data.get('filename', 'unknown_recording.mp4')
+            file_size = video_file.size if video_file else request.data.get('file_size', 0)
+            
+            # Create a recorded video entry with just metadata (no file storage)
+            recorded_video = RecordedVideo.objects.create(
+                agent=agent, 
+                filename=filename,
+                # Don't store video_file since it's saved locally
+            )
+            
+            logger.info(f"Recording logged successfully - ID: {recorded_video.id}, Filename: {filename}, Size: {file_size} bytes")
+            
+            return Response({
+                "message": "Recording logged successfully.",
+                "video_id": recorded_video.id,
+                "filename": filename,
+                "local_storage": True
+            }, status=status.HTTP_201_CREATED)
+            
         except Exception as e:
-            return Response({"error": f"Failed to save video: {e}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error during recording log: {str(e)}", exc_info=True)
+            return Response({"error": f"Failed to log recording: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # ==============================================================================
@@ -308,7 +348,7 @@ def recorded_video_list_api_view(request):
     if agent_id := request.GET.get('agent_id'): queryset = queryset.filter(agent__agent_id=agent_id)
     limit = int(request.GET.get('limit', 50)); queryset = queryset.order_by('-upload_time')[:limit]
     
-    data = [{'id': video.id, 'agent_id': video.agent.agent_id, 'user_email': video.agent.user.email, 'filename': video.filename, 'video_url': request.build_absolute_uri(video.video_file.url) if video.video_file else '', 'upload_time': video.upload_time.isoformat()} for video in queryset]
+    data = [{'id': video.id, 'agent_id': video.agent.agent_id, 'user_email': video.agent.user.email, 'filename': video.filename, 'video_url': request.build_absolute_uri(video.video_file.url) if video.video_file else 'Local Storage', 'upload_time': video.upload_time.isoformat(), 'storage_type': 'Local' if not video.video_file else 'Server'} for video in queryset]
     return Response(data)
 
 @api_view(['GET'])

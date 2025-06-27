@@ -21,11 +21,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # --- Your Application URLs ---
-    
+
     # Include all URLs from your user authentication app.
     # This will handle URLs like /accounts/login/, /accounts/dashboard/, etc.
     path('accounts/', include('accounts.urls', namespace='accounts')),
-    
+
     # MODIFIED: Include all URLs from your monitoring app.
     # This single line replaces the two old, incorrect 'monitoring' includes.
     # It will handle URLs like /monitor/dashboard/, /monitor/api/agents/status/, etc.

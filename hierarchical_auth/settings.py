@@ -28,14 +28,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    
+
     # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'crispy_forms',
     "crispy_bootstrap5",
     'channels', # <-- ADDED for real-time functionality
-    
+
     # Your apps
     'accounts', 
     'monitor_app',
@@ -116,13 +116,16 @@ USE_TZ = True
 
 EMAIL_ENCRYPTION_KEY='5OJEWgSxtXW3NB5SEmut77ZNRARdSU1mUhxDIGqgMEQ='
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media') 
-
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
+# Media files (uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 AGENT_API_KEY = "YOUR_SUPER_SECRET_AGENT_API_KEY"
 AGENT_ONLINE_TIMEOUT_SECONDS = 30 # <-- ADDED
@@ -177,7 +180,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # Use JWT for authenticating users who are accessing the web dashboard API.
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        
+
         # SessionAuthentication is good to have for browsing the API in a browser.
         'rest_framework.authentication.SessionAuthentication', 
     ),
