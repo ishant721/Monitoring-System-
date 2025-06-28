@@ -1,4 +1,3 @@
-# hierarchical_auth/urls.py
 
 from django.contrib import admin
 from django.urls import path, include
@@ -9,7 +8,7 @@ from django.urls import reverse_lazy
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
-)
+    )
 
 urlpatterns = [
     # --- Root URL Redirect ---
@@ -26,13 +25,10 @@ urlpatterns = [
     # This will handle URLs like /accounts/login/, /accounts/dashboard/, etc.
     path('accounts/', include('accounts.urls', namespace='accounts')),
 
-    # MODIFIED: Include all URLs from your monitoring app.
+    # Include all URLs from your monitoring app.
     # This single line replaces the two old, incorrect 'monitoring' includes.
     # It will handle URLs like /monitor/dashboard/, /monitor/api/agents/status/, etc.
     path('monitor/', include('monitor_app.urls', namespace='monitor_app')),
-
-    # Include API URLs without namespace to avoid conflicts
-    path('api/', include('monitor_app.api.urls')),
     path('mail/', include('mail_monitor.urls')),
 
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Live Screen Monitoring{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-video"></i> Live Screen Monitoring</h2>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" id="refreshStreams">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <a href="{% url 'monitor_app:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="streamsContainer">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                <p class="mt-3 text-muted">Loading live streams...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="streamModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Live Stream - <span id="modalAgentId"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <canvas id="streamCanvas" style="max-width: 100%; max-height: 70vh; border: 1px solid #ddd;"></canvas>
+                <div id="streamStatus" class="mt-3">
+                    <span class="badge bg-success">Connected</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="fullscreenBtn">
+                    <i class="fas fa-expand"></i> Fullscreen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const API_TOKEN = '{{ access_token }}';
+    let activeStreams = new Map();
+    let currentWebSocket = null;
+    
+    function loadLiveStreams() {
+        fetch('/monitor/api/live_streams/?live_only=true', {
+            headers: {
+                'Authorization': `Bearer ${API_TOKEN}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayStreams(data);
+        })
+        .catch(error => {
+            console.error('Error loading streams:', error);
+            document.getElementById('streamsContainer').innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error loading live streams. Please try again.
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function displayStreams(streams) {
+        const container = document.getElementById('streamsContainer');
+        
+        if (streams.length === 0) {
+            container.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle"></i> No live streams currently active.
+                        <br><small class="text-muted">Agents need to start screen recording to appear here.</small>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        streams.forEach(stream => {
+            html += `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <small class="text-muted">${stream.agent_id.substring(0, 8)}...</small>
+                            <span class="badge bg-success">
+                                <i class="fas fa-circle"></i> Live
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted">
+                                <small>Last seen: ${new Date(stream.last_seen).toLocaleString()}</small>
+                            </p>
+                            <button class="btn btn-primary btn-sm w-100" onclick="openStream('${stream.agent_id}', '${stream.user_email}')">
+                                <i class="fas fa-play"></i> View Stream
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    window.openStream = function(agentId, userEmail) {
+        document.getElementById('modalAgentId').textContent = `${userEmail} (${agentId.substring(0, 8)}...)`;
+        
+        if (currentWebSocket) {
+            currentWebSocket.close();
+        }
+        
+        const modal = new bootstrap.Modal(document.getElementById('streamModal'));
+        modal.show();
+        
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/monitor/ws/stream/viewer/${agentId}/`;
+        
+        currentWebSocket = new WebSocket(wsUrl);
+        const canvas = document.getElementById('streamCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('streamStatus');
+        
+        currentWebSocket.onopen = function() {
+            statusDiv.innerHTML = '<span class="badge bg-success">Connected</span>';
+        };
+        
+        currentWebSocket.onmessage = function(event) {
+            // Handle incoming stream data
+            const data = JSON.parse(event.data);
+            if (data.type === 'video_frame') {
+                const frame = new Image();
+                frame.src = `data:image/jpeg;base64,${data.frame_data}`;
+                frame.onload = function() {
+                    ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+                };
+            }
+        };
+        
+        currentWebSocket.onclose = function() {
+            statusDiv.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+        };
+        
+        currentWebSocket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+            statusDiv.innerHTML = '<span class="badge bg-warning">Connection Error</span>';
+        };
+    };
+
+    document.getElementById('refreshStreams').addEventListener('click', loadLiveStreams);
+    
+    // Initial load
+    loadLiveStreams();
+    setInterval(loadLiveStreams, 30000);
+});
+</script>
+{% endblock %}

@@ -63,3 +63,22 @@ class KeyLoggerView(LoginRequiredMixin, TemplateView):
 # @api_view(['GET'])
 # def agent_status_api_view(request): ...
 # ... etc ...
+class LiveStreamView(LoginRequiredMixin, TemplateView):
+    """
+    Serves the live video streaming page for admins to view agent screens in real-time
+    """
+    template_name = 'monitor_app/live_stream.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Live Screen Monitoring"
+        
+        # Generate access token for API calls
+        try:
+            refresh = RefreshToken.for_user(self.request.user)
+            context['access_token'] = str(refresh.access_token)
+        except Exception as e:
+            context['access_token'] = None
+            print(f"Could not generate access token for user {self.request.user.email}: {e}")
+            
+        return context

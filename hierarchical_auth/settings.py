@@ -109,10 +109,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
+# https://docs.djangoproject.com/en/4.2/topics/i18n/
+
 LANGUAGE_CODE = 'en-us'
+
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
+
+# Agent API Key for authentication
+MASTER_API_KEY = os.getenv('MASTER_API_KEY', 'your-secure-api-key-here')
+
+# Agent online timeout (seconds)
+AGENT_ONLINE_TIMEOUT_SECONDS = 30
 
 EMAIL_ENCRYPTION_KEY='5OJEWgSxtXW3NB5SEmut77ZNRARdSU1mUhxDIGqgMEQ='
 

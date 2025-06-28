@@ -66,12 +66,15 @@ class Agent(models.Model):
     window_title = models.CharField(max_length=512, blank=True, null=True)
     active_browser_url = models.URLField(max_length=2048, blank=True, null=True)
     is_recording = models.BooleanField(default=False)
+    is_live_streaming = models.BooleanField(default=False)
+    live_stream_url = models.URLField(max_length=512, blank=True, null=True)
     productive_status = models.CharField(max_length=50, default="N/A")
 
     # --- Per-Agent Configuration Fields ---
     capture_interval_seconds = models.IntegerField(default=10)
     is_activity_monitoring_enabled = models.BooleanField(default=True)
     is_network_monitoring_enabled = models.BooleanField(default=True)
+    is_live_streaming_enabled = models.BooleanField(default=False)  # Admin control for live streaming
     
     # Per-Agent Daily Schedule
     monday_active_start = models.TimeField(null=True, blank=True); monday_active_end = models.TimeField(null=True, blank=True)
@@ -114,6 +117,8 @@ class RecordedVideo(models.Model):
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='recorded_videos')
     filename = models.CharField(max_length=255)
     video_file = models.FileField(upload_to=video_upload_path, blank=True, null=True)
+    is_live_stream = models.BooleanField(default=False)
+    stream_url = models.URLField(max_length=512, blank=True, null=True)
     upload_time = models.DateTimeField(auto_now_add=True)
     duration_seconds = models.IntegerField(blank=True, null=True)
 

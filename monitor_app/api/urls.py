@@ -20,4 +20,5 @@ urlpatterns = [
     path('keylogs/', views.keylog_history_api_view, name='keylog_history_alias'),
     path('recordings/videos/', views.recorded_video_list_api_view, name='recorded_videos'),  # Frontend expects this
     path('videos/', views.recorded_video_list_api_view, name='recorded_videos_alias'),
+    path('live_streams/', views.live_stream_status_api_view, name='live_stream_status_api'),
 ]

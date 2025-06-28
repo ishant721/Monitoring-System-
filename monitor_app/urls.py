@@ -14,6 +14,9 @@ urlpatterns = [
     
     # Resolves to /monitor/keylogger/
     path('keylogger/', views.KeyLoggerView.as_view(), name='keylogger_dashboard'),
+    
+    # Resolves to /monitor/live_stream/
+    path('live_stream/', views.LiveStreamView.as_view(), name='live_stream'),
 
     # --- API URL Delegation ---
     # This single line is crucial for your organized structure. It tells Django
