@@ -2,6 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path('live_streams/', views.live_streams_api_view, name='live_streams_api'),
+    path('toggle_live_streaming/<str:agent_id>/', views.toggle_live_streaming_api_view, name='toggle_live_streaming_api'),
+    path('agent/<str:agent_id>/toggle_live_streaming/', views.toggle_live_streaming_api_view, name='toggle_live_streaming_api_alt'),
     # Agent-facing API endpoints
     path('config/', views.get_config_api, name='get_config_api'),
     path('upload_recording/', views.RecordingUploadAPIView.as_view(), name='upload_recording'),

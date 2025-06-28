@@ -37,12 +37,13 @@ class LiveVideoStreamConsumer(AsyncWebsocketConsumer):
         elif self.user_type == 'viewer':
             # Admin viewing video
             user = self.scope.get('user')
-            if user and await self.check_admin_permissions(user):
+            if user and user.is_authenticated and await self.check_admin_permissions(user):
                 self.stream_group = f'video_stream_{self.agent_id}'
                 await self.channel_layer.group_add(self.stream_group, self.channel_name)
                 await self.accept()
                 logger.info(f"Admin {user.email} connected to view stream for agent {self.agent_id}")
             else:
+                logger.warning(f"Unauthorized viewer connection attempt for agent {self.agent_id}")
                 await self.close(code=4003)
         else:
             await self.close(code=4004)

@@ -79,6 +79,7 @@ ffmpeg_log_file = None
 # --- Feature Bundle Flags ---
 is_activity_monitoring_enabled_by_control = True
 is_network_monitoring_enabled_by_control = True
+is_live_streaming_enabled_by_control = False
 
 # --- Scheduling Variables ---
 is_agent_active_by_schedule = True
@@ -748,112 +749,143 @@ def is_within_active_schedule():
         print(f"Warning: Invalid time format in schedule for {today_weekday_str} ('{start_time_str}'-'{end_time_str}'). Error: {e}")
         return True
 
+# Replace your existing websocket_message_handler with this one.
+
 async def websocket_message_handler():
+    """
+    Handles all incoming messages from the control WebSocket.
+    Processes direct commands and global configuration updates, reconciling the agent's state.
+    """
     global websocket_client, is_recording, ffmpeg_process, recording_task, \
            is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, \
-           current_interval_ms, current_schedule
+           is_live_streaming_enabled_by_control, current_interval_ms, current_schedule, live_streaming_task
 
     while True:
+        # Loop only if the websocket client exists and is open
         if websocket_client and websocket_client.state == State.OPEN:
             try:
                 message = await websocket_client.recv()
                 data = json.loads(message)
 
-                if data.get("type") == "control":
-                    action = data.get("action")
-                    feature_bundle = data.get("feature_bundle")
-                    new_interval_from_control = data.get("interval")
+                # Ensure the message is a control command
+                if data.get("type") != "control":
+                    print(f"INFO: Received non-control message, ignoring: {data.get('type')}")
+                    continue
 
-                    print(f"Received control command: action='{action}', feature_bundle='{feature_bundle}', interval='{new_interval_from_control}'")
+                action = data.get("action")
+                feature_bundle = data.get("feature_bundle")
+                print(f"Received control command: {data}")
 
-                    if feature_bundle == "screen_recording":
+                # --- Handler for direct start/stop commands ---
+                if action in ["start", "stop"] and feature_bundle:
+                    if feature_bundle == "live_streaming":
                         if action == "start":
-                            if not is_recording:
-                                await start_recording()
-                            else:
-                                await send_control_response(False, "Recording already active.")
+                            asyncio.create_task(start_live_streaming())
                         elif action == "stop":
-                            if is_recording:
-                                await stop_recording()
-                            else:
-                                await send_control_response(False, "No recording active.")
-                        else:
-                            await send_control_response(False, f"Unknown action '{action}' for screen_recording.")
-
-                    elif feature_bundle == "activity_monitoring":
-                        if action == "enable":
-                            is_activity_monitoring_enabled_by_control = True
-                            print("Command: Activity Monitoring Enabled.")
-                            await send_control_response(True, "Activity monitoring enabled.")
-                        elif action == "disable":
-                            is_activity_monitoring_enabled_by_control = False
-                            print("Command: Activity Monitoring Disabled.")
-                            await send_control_response(True, "Activity monitoring disabled.")
-                        else:
-                            await send_control_response(False, f"Unknown action '{action}' for activity_monitoring.")
-
-                    elif feature_bundle == "network_monitoring":
-                        if action == "enable":
-                            is_network_monitoring_enabled_by_control = True
-                            print("Command: Network Monitoring Enabled.")
-                            await send_control_response(True, "Network monitoring enabled.")
-                        elif action == "disable":
-                            is_network_monitoring_enabled_by_control = False
-                            print("Command: Network Monitoring Disabled.")
-                            await send_control_response(True, "Network monitoring disabled.")
-                        else:
-                            await send_control_response(False, f"Unknown action '{action}' for network_monitoring.")
-
-                    elif feature_bundle == "interval_control":
-                        if action == "set" and new_interval_from_control is not None and new_interval_from_control > 0:
-                            current_interval_ms = new_interval_from_control * 1000
-                            print(f"Command: Set interval to {new_interval_from_control} seconds from direct control.")
-                            await send_control_response(True, f"Interval set to {new_interval_from_control} seconds.")
-                        else:
-                            await send_control_response(False, "Invalid interval control command.")
-
-                    elif action == "set_global_config":
-                        print(f"Received global config update via broadcast: {data}")
-                        if data.get("capture_interval") is not None:
-                            current_interval_ms = data.get("capture_interval") * 1000
-                            print(f"Updated interval from global config: {current_interval_ms / 1000}s")
-                        if data.get("activity_monitoring_enabled") is not None:
-                            is_activity_monitoring_enabled_by_control = data.get("activity_monitoring_enabled")
-                            print(f"Updated activity monitoring from global config: {is_activity_monitoring_enabled_by_control}")
-                        if data.get("network_monitoring_enabled") is not None:
-                            is_network_monitoring_enabled_by_control = data.get("network_monitoring_enabled")
-                            print(f"Updated network monitoring from global config: {is_network_monitoring_enabled_by_control}")
-                        if data.get("schedule") is not None:
-                            current_schedule = data.get("schedule")
-                            print(f"Updated monitoring schedule from global config: {current_schedule}")
-
-                        # Save updated config locally
-                        save_local_config()
-                        await send_control_response(True, "Global config updated and saved locally.")
-
-                    elif action == "refresh_config":
-                        print("Received config refresh command")
-                        await fetch_config()
-                        await send_control_response(True, "Configuration refreshed from server.")
-
-
-
+                            asyncio.create_task(stop_live_streaming())
+                    elif feature_bundle == "screen_recording":
+                        if action == "start":
+                            await start_recording()
+                        elif action == "stop":
+                            await stop_recording()
                     else:
-                        await send_control_response(False, f"Unknown control command: Type={data.get('type')}, Bundle={feature_bundle}, Action={action}")
+                        await send_control_response(False, f"Unknown feature_bundle '{feature_bundle}' for start/stop action.")
 
+                # --- Handler for enabling/disabling features ---
+                elif action in ["enable", "disable"] and feature_bundle:
+                    new_state = (action == "enable")
+                    if feature_bundle == "activity_monitoring":
+                        is_activity_monitoring_enabled_by_control = new_state
+                        print(f"Command: Activity Monitoring {'Enabled' if new_state else 'Disabled'}.")
+                        await send_control_response(True, f"Activity monitoring {'enabled' if new_state else 'disabled'}.")
+                    elif feature_bundle == "network_monitoring":
+                        is_network_monitoring_enabled_by_control = new_state
+                        print(f"Command: Network Monitoring {'Enabled' if new_state else 'Disabled'}.")
+                        await send_control_response(True, f"Network monitoring {'enabled' if new_state else 'disabled'}.")
+                    else:
+                        await send_control_response(False, f"Unknown feature_bundle '{feature_bundle}' for enable/disable action.")
+
+                # --- Handler for interval changes ---
+                elif action == "set" and feature_bundle == "interval_control":
+                    new_interval = data.get("interval")
+                    if new_interval and new_interval > 0:
+                        current_interval_ms = new_interval * 1000
+                        print(f"Command: Set interval to {new_interval} seconds.")
+                        await send_control_response(True, f"Interval set to {new_interval} seconds.")
+                    else:
+                        await send_control_response(False, "Invalid interval value provided.")
+
+                # --- Handler for global configuration updates (most robust) ---
+                elif action == "set_global_config":
+                    print(f"Processing global config update...")
+
+                    # 1. Update all internal configuration variables from the payload
+                    if data.get("capture_interval") is not None:
+                        current_interval_ms = data.get("capture_interval") * 1000
+                        print(f"Updated interval from global config: {data.get('capture_interval')}s")
+                    if data.get("activity_monitoring_enabled") is not None:
+                        is_activity_monitoring_enabled_by_control = data.get("activity_monitoring_enabled")
+                        print(f"Updated activity monitoring from global config: {is_activity_monitoring_enabled_by_control}")
+                    if data.get("network_monitoring_enabled") is not None:
+                        is_network_monitoring_enabled_by_control = data.get("network_monitoring_enabled")
+                        print(f"Updated network monitoring from global config: {is_network_monitoring_enabled_by_control}")
+                    if data.get("schedule") is not None:
+                        current_schedule = data.get("schedule")
+                        print(f"Updated monitoring schedule from global config.")
+                    if data.get("live_streaming_enabled") is not None:
+                        is_live_streaming_enabled_by_control = data.get("live_streaming_enabled")
+                        print(f"Updated live streaming flag from global config: {is_live_streaming_enabled_by_control}")
+
+                    # 2. Reconcile the actual state with the desired configuration state
+                    print("INFO: Reconciling agent state with new global configuration...")
+
+                    # Check live streaming state
+                    is_task_running = live_streaming_task and not live_streaming_task.done()
+                    if is_live_streaming_enabled_by_control:
+                        if not is_task_running:
+                            print("ACTION: Reconciling state. Config requires live stream ON, but it's OFF. Starting...")
+                            asyncio.create_task(start_live_streaming())
+                        else:
+                            print("INFO: Live stream is correctly running as per config.")
+                    else: # Config wants streaming to be OFF
+                        if is_task_running:
+                            print("ACTION: Reconciling state. Config requires live stream OFF, but it's ON. Stopping...")
+                            asyncio.create_task(stop_live_streaming())
+                        else:
+                            print("INFO: Live stream is correctly stopped as per config.")
+                    
+                    # (You can add similar reconciliation for recording if needed in the future)
+
+                    # 3. Save the new config and respond
+                    save_local_config()
+                    await send_control_response(True, "Global config updated and agent state reconciled.")
+
+                # --- Handler for a manual config refresh command ---
+                elif action == "refresh_config":
+                    print("Received command to refresh configuration from server.")
+                    await fetch_config() # fetch_config should also trigger reconciliation
+                    await send_control_response(True, "Configuration refreshed from server.")
+
+                else:
+                    await send_control_response(False, f"Unknown control command or bundle: Action='{action}', Bundle='{feature_bundle}'")
+
+            # --- Exception Handling for the WebSocket connection ---
             except websockets.exceptions.ConnectionClosedOK:
-                print("WebSocket receive loop closed gracefully.")
+                print("INFO: Control websocket connection closed gracefully.")
                 websocket_client = None
-                break
-            except websockets.exceptions.WebSocketException as e:
-                print(f"WebSocket receive error: {e}. Attempting reconnect on next heartbeat.")
+                break # Exit the message handler loop
+            except websockets.exceptions.ConnectionClosedError as e:
+                print(f"ERROR: Control websocket connection closed with an error: {e}. Will attempt to reconnect.")
                 websocket_client = None
-                break
+                break # Exit the message handler loop
             except json.JSONDecodeError:
-                print(f"Received non-JSON message: {message}")
+                print(f"WARNING: Received non-JSON message from control socket: {message}")
             except Exception as e:
-                print(f"Error processing WebSocket message: {e}")
+                print(f"ERROR: An unexpected error occurred in the websocket message handler: {e}")
+                # Depending on the error, you might want to break or continue
+                await asyncio.sleep(1)
         else:
+            # If the client is not connected, wait a second before checking again
             await asyncio.sleep(1)
 
 async def send_heartbeat():
@@ -925,6 +957,7 @@ async def send_heartbeat():
         "is_recording": is_recording,
         "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
         "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
+        "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
         "productive_status": productive_status,
         "current_interval_seconds": current_interval_ms / 1000,
         "is_agent_active_by_schedule": is_agent_active_by_schedule
@@ -946,7 +979,7 @@ async def send_heartbeat():
     typed_keys_string = ""
 
 async def fetch_config():
-    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule
+    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control
 
     try:
         headers = {"X-API-KEY": API_KEY, "X-AGENT-ID": AGENT_ID}
@@ -959,29 +992,31 @@ async def fetch_config():
         if agent_config:
             new_interval_s = agent_config.get("capture_interval_seconds", 10)
             current_interval_ms = new_interval_s * 1000
-            
+
             is_activity_monitoring_enabled_by_control = agent_config.get("is_activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = agent_config.get("is_network_monitoring_enabled", True)
-            
+            is_live_streaming_enabled_by_control = agent_config.get("is_live_streaming_enabled", False)
+
             # Apply schedule if available
             if agent_config.get("schedule"):
                 current_schedule = agent_config.get("schedule")
-                
-            print(f"Applied agent-specific config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
+
+            print(f"Applied agent-specific config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}")
         else:
             # Fallback to global config
             new_interval_s = config_data.get("capture_interval", 10)
             current_interval_ms = new_interval_s * 1000
-            
+
             is_activity_monitoring_enabled_by_control = config_data.get("activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = config_data.get("network_monitoring_enabled", True)
+            is_live_streaming_enabled_by_control = config_data.get("live_streaming_enabled", False)
             current_schedule = config_data.get("schedule", current_schedule)
-            
-            print(f"Applied global config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
+
+            print(f"Applied global config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}")
 
         # Save config locally for offline use
         save_local_config()
-        
+
         print(f"Monitoring Schedule: {current_schedule}")
 
     except requests.exceptions.RequestException as e:
@@ -994,22 +1029,23 @@ async def fetch_config():
 
 def load_local_config():
     """Load settings from local file when server is unavailable"""
-    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule
-    
+    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control
+
     try:
         config_file_path = "local_agent_config.json"
         if getattr(sys, 'frozen', False):
             config_file_path = os.path.join(os.path.dirname(sys.executable), "local_agent_config.json")
-            
+
         if os.path.exists(config_file_path):
             with open(config_file_path, 'r') as f:
                 local_config = json.load(f)
-                
+
             current_interval_ms = local_config.get("capture_interval_seconds", 10) * 1000
             is_activity_monitoring_enabled_by_control = local_config.get("is_activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = local_config.get("is_network_monitoring_enabled", True)
+            is_live_streaming_enabled_by_control = local_config.get("is_live_streaming_enabled", False)
             current_schedule = local_config.get("schedule", current_schedule)
-            
+
             last_updated = local_config.get("last_updated", 0)
             print(f"Loaded local config (last updated: {datetime.datetime.fromtimestamp(last_updated)})")
             print(f"Interval: {current_interval_ms//1000}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
@@ -1026,14 +1062,15 @@ def save_local_config():
             "capture_interval_seconds": current_interval_ms // 1000,
             "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
             "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
+            "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
             "schedule": current_schedule,
             "last_updated": time.time()
         }
-        
+
         config_file_path = "local_agent_config.json"
         if getattr(sys, 'frozen', False):
             config_file_path = os.path.join(os.path.dirname(sys.executable), "local_agent_config.json")
-            
+
         with open(config_file_path, 'w') as f:
             json.dump(local_config, f, indent=2)
         print(f"Config saved locally to {config_file_path}")
@@ -1136,3 +1173,168 @@ if __name__ == "__main__":
     finally:
         print("Agent process terminated.")
         sys.exit(0)
+
+# Global live streaming variables
+live_streaming_websocket = None
+live_streaming_task = None
+
+async def start_live_streaming():
+    """Starts the live streaming task if it's enabled and not already running."""
+    global live_streaming_task
+
+    print("DEBUG: start_live_streaming() called.")
+    if not is_live_streaming_enabled_by_control:
+        print("DEBUG: Live streaming is disabled by control, cannot start.")
+        await send_control_response(False, "Live streaming is disabled by configuration.")
+        return
+
+    if live_streaming_task and not live_streaming_task.done():
+        print("DEBUG: Live streaming task is already running.")
+        await send_control_response(False, "Live streaming is already active.")
+        return
+
+    print("INFO: Control command accepted. Starting live stream task.")
+    live_streaming_task = asyncio.create_task(live_streaming_loop())
+    await send_control_response(True, "Live streaming initiated.")
+
+
+async def stop_live_streaming():
+    """Stops the live streaming task if it is running."""
+    global live_streaming_task, live_streaming_websocket
+
+    print("DEBUG: stop_live_streaming() called.")
+    if live_streaming_websocket:
+        print("INFO: Closing live streaming websocket.")
+        await live_streaming_websocket.close()
+        live_streaming_websocket = None
+
+    if live_streaming_task and not live_streaming_task.done():
+        print("INFO: Cancelling live streaming task.")
+        live_streaming_task.cancel()
+        try:
+            await live_streaming_task
+        except asyncio.CancelledError:
+            print("INFO: Live streaming task successfully cancelled.")
+        live_streaming_task = None
+    else:
+        print("DEBUG: No active live stream task to stop.")
+
+    await send_control_response(True, "Live streaming stopped.")
+
+
+def _install_opencv_non_blocking():
+    """Synchronous function to be run in a separate thread to avoid blocking asyncio loop."""
+    print("OpenCV/Numpy not found. Attempting to install non-blockingly...")
+    try:
+        process = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "opencv-python", "numpy"],
+            check=True, capture_output=True, text=True
+        )
+        print("INFO: OpenCV and NumPy installed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"FATAL: Failed to install OpenCV. Pip stderr:\n{e.stderr}")
+        return False
+    except Exception as e:
+        print(f"FATAL: An unexpected error occurred during OpenCV installation: {e}")
+        return False
+
+
+async def live_streaming_loop():
+    """The main loop for capturing and sending screen frames for live streaming."""
+    global live_streaming_websocket, is_live_streaming_enabled_by_control
+
+    # --- Dependency Check ---
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:
+        installed_ok = await asyncio.to_thread(_install_opencv_non_blocking)
+        if not installed_ok:
+            is_live_streaming_enabled_by_control = False # Disable to prevent retries
+            await send_control_response(False, "Live streaming failed: could not install dependencies.")
+            return
+        import cv2
+        import numpy as np
+
+    # --- Connection and Authentication ---
+    base_ws_url = BACKEND_URL.replace('http', 'ws', 1)
+    streaming_url = f"{base_ws_url}/ws/stream/agent/{AGENT_ID}/"
+    print(f"DEBUG: [Live Stream] Attempting to connect to: {streaming_url}")
+
+    try:
+        async with websockets.connect(streaming_url) as websocket:
+            live_streaming_websocket = websocket
+            print("INFO: [Live Stream] WebSocket connection established. Authenticating...")
+
+            ### =============================================================== ###
+            ### CRITICAL FIX: SEND AUTHENTICATION PAYLOAD ON THE STREAMING SOCKET ###
+            ### =============================================================== ###
+            auth_payload = {
+                "type": "auth",
+                "api_key": API_KEY,
+                "agent_id": AGENT_ID
+            }
+            await websocket.send(json.dumps(auth_payload))
+            
+            # Optional: Wait for an auth_success message from the backend.
+            # This makes the connection more robust.
+            try:
+                response = await asyncio.wait_for(websocket.recv(), timeout=5)
+                response_data = json.loads(response)
+                if response_data.get("status") != "auth_success":
+                    print(f"ERROR: [Live Stream] Authentication failed: {response_data.get('reason')}")
+                    return # Exit the loop if auth fails
+            except asyncio.TimeoutError:
+                print("WARNING: [Live Stream] Did not receive auth confirmation from server in 5s. Proceeding anyway.")
+            except Exception as e:
+                 print(f"ERROR: [Live Stream] Error receiving auth confirmation: {e}")
+                 return
+
+            print("INFO: [Live Stream] Authentication successful. Starting frame transmission.")
+
+            # --- Frame Processing Loop ---
+            while is_live_streaming_enabled_by_control:
+                try:
+                    frame_data, (width, height) = capture_raw_frame()
+                    if not frame_data:
+                        await asyncio.sleep(0.5)
+                        continue
+
+                    frame_np = np.frombuffer(frame_data, dtype=np.uint8).reshape((height, width, 3))
+                    frame_bgr = cv2.cvtColor(frame_np, cv2.COLOR_RGB2BGR)
+
+                    scale_percent = min(1.0, 720 / height)
+                    if scale_percent < 1.0:
+                        new_width = int(width * scale_percent)
+                        new_height = int(height * scale_percent)
+                        frame_resized = cv2.resize(frame_bgr, (new_width, new_height), interpolation=cv2.INTER_AREA)
+                    else:
+                        frame_resized = frame_bgr
+
+                    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
+                    result, buffer = cv2.imencode('.jpg', frame_resized, encode_param)
+
+                    if result:
+                        await websocket.send(buffer.tobytes())
+
+                    await asyncio.sleep(0.1) # Target ~10 FPS
+
+                except websockets.exceptions.ConnectionClosed:
+                    print("ERROR: [Live Stream] Connection closed by server during frame sending.")
+                    break # Exit the inner while loop
+                except Exception as e:
+                    print(f"ERROR: [Live Stream] An error occurred inside the frame processing loop: {e}")
+                    await asyncio.sleep(1) # Wait a bit before retrying
+
+    except asyncio.CancelledError:
+        print("INFO: [Live Stream] Loop was cancelled.")
+    except websockets.exceptions.InvalidURI:
+        print(f"ERROR: [Live Stream] The WebSocket URI is invalid: {streaming_url}")
+    except websockets.exceptions.ConnectionClosedError as e:
+        print(f"ERROR: [Live Stream] Connection failed. The server may have rejected the connection. Reason: {e}")
+    except Exception as e:
+        print(f"FATAL: [Live Stream] An unhandled error occurred in the connection block: {e}")
+    finally:
+        print("INFO: [Live Stream] Loop has terminated.")
+        live_streaming_websocket = None

@@ -46,9 +46,14 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0"><i class="fas fa-desktop me-2"></i>Live Agent Status</h5>
-                        <button class="btn btn-sm btn-success" onclick="showBulkControlModal()">
-                            <i class="fas fa-cogs me-1"></i>Bulk Control
-                        </button>
+                        <div>
+                            <a href="{% url 'monitor_app:live_stream' %}" class="btn btn-sm btn-info me-2">
+                                <i class="fas fa-video me-1"></i>Live Streaming
+                            </a>
+                            <button class="btn btn-sm btn-success" onclick="showBulkControlModal()">
+                                <i class="fas fa-cogs me-1"></i>Bulk Control
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div id="agent-status-container">
@@ -458,6 +463,11 @@
                                                     <i class="fas fa-record-vinyl"></i>
                                                 </button>`
                                             }
+                                            <button class="btn btn-outline-info btn-sm" onclick="toggleLiveStreaming('${agent.agent_id}', '${agent.is_live_streaming_enabled}')" title="Toggle Live Stream">
+                                                <span id="stream-btn-${agent.agent_id}">
+                                                    ${agent.is_live_streaming_enabled ? 'Stop Stream' : 'Start Stream'}
+                                                </span>
+                                            </button>
                                         </div>
                                     </div>
                                     <div class="detail-row">
@@ -473,6 +483,10 @@
                                     <div class="detail-row">
                                         <span class="detail-label">Recording:</span> 
                                         ${agent.is_recording ? '<i class="fas fa-record-vinyl text-danger"></i> Yes' : '<i class="fas fa-stop text-secondary"></i> No'}
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Live Streaming:</span> 
+                                        ${agent.is_live_streaming_enabled ? '<i class="fas fa-video text-success"></i> Enabled' : '<i class="fas fa-video text-secondary"></i> Disabled'}
                                     </div>
                                     <div class="detail-row">
                                         <span class="detail-label">Interval:</span> ${agent.capture_interval_seconds}s
@@ -832,6 +846,64 @@
             videoPlayer.src = videoUrl;
             modalLabel.textContent = `Playing: ${filename}`;
             modal.show();
+        }
+
+        function viewHistory(agentId) {
+            const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+            document.getElementById('historyAgentId').textContent = agentId;
+            loadHistoryData(agentId);
+            modal.show();
+        }
+
+        function toggleLiveStreaming(agentId, currentStatus) {
+            const isEnabled = currentStatus === 'True';
+            const action = isEnabled ? 'disable' : 'enable';
+
+            if (confirm(`Are you sure you want to ${action} live streaming for this agent?`)) {
+                fetch(`/monitor/api/toggle_live_streaming/${agentId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        // Update button text
+                        const btnSpan = document.getElementById(`stream-btn-${agentId}`);
+                        btnSpan.textContent = data.is_live_streaming_enabled ? 'Stop Stream' : 'Start Stream';
+
+                        // Show success message
+                        alert(data.message, 'success');
+
+                        // Refresh the page to update status
+                        loadAgentStatus();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error toggling live streaming:', error);
+                    alert('Failed to toggle live streaming', 'danger');
+                });
+            }
+        }
+
+        function alert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 3000);
         }
 
         // Initialize page
