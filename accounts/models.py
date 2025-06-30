@@ -1,3 +1,77 @@
+
+import uuid
+from django.db import models
+from django.contrib.auth.models import AbstractUser, BaseUserManager, Group, Permission
+from django.utils import timezone
+from datetime import timedelta, date
+from django.conf import settings # For settings like OTP_VALIDITY_MINUTES
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+class AdminFeatureRestrictions(models.Model):
+    """
+    Controls which features are available to each admin company based on their subscription level.
+    This is managed by superadmins to implement subscription-based feature restrictions.
+    """
+    admin = models.OneToOneField(
+        'CustomUser', 
+        on_delete=models.CASCADE, 
+        related_name='feature_restrictions',
+        limit_choices_to={'role': 'ADMIN'}
+    )
+    
+    # Core monitoring features
+    can_use_activity_monitoring = models.BooleanField(default=True, help_text="Allow basic activity tracking")
+    can_use_network_monitoring = models.BooleanField(default=True, help_text="Allow network usage monitoring")
+    can_use_screenshot_capturing = models.BooleanField(default=True, help_text="Allow screenshot capture")
+    
+    # Advanced monitoring features (typically premium)
+    can_use_live_streaming = models.BooleanField(default=False, help_text="Allow live screen streaming")
+    can_use_video_recording = models.BooleanField(default=False, help_text="Allow video recording")
+    can_use_keystroke_logging = models.BooleanField(default=False, help_text="Allow keystroke logging")
+    can_use_email_monitoring = models.BooleanField(default=False, help_text="Allow email monitoring")
+    
+    # Administrative features
+    can_configure_monitoring = models.BooleanField(default=True, help_text="Allow configuring monitoring settings")
+    can_manage_email_config = models.BooleanField(default=True, help_text="Allow email server configuration")
+    
+    # Feature limits
+    max_screenshot_retention_days = models.IntegerField(default=30, help_text="Maximum days to retain screenshots")
+    max_video_retention_days = models.IntegerField(default=7, help_text="Maximum days to retain videos")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Admin Feature Restriction"
+        verbose_name_plural = "Admin Feature Restrictions"
+    
+    def __str__(self):
+        return f"Feature restrictions for {self.admin.email}"
+    
+    @classmethod
+    def get_or_create_for_admin(cls, admin_user):
+        """Get or create feature restrictions for an admin with default settings"""
+        restrictions, created = cls.objects.get_or_create(
+            admin=admin_user,
+            defaults={
+                'can_use_activity_monitoring': True,
+                'can_use_network_monitoring': True,
+                'can_use_screenshot_capturing': True,
+                'can_use_live_streaming': False,
+                'can_use_video_recording': False,
+                'can_use_keystroke_logging': False,
+                'can_use_email_monitoring': False,
+                'can_configure_monitoring': True,
+                'can_manage_email_config': True,
+            }
+        )
+        return restrictions
+
+
+
 # accounts/models.py
 import uuid
 from django.db import models
@@ -77,7 +151,7 @@ class CustomUser(AbstractUser):
     username = None 
     email = models.EmailField(unique=True, help_text="Primary email address, used for login.")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=USER)
-    phone_number = models.CharField(max_length=17, unique=True, null=True, blank=True, help_text="Optional phone number, e.g., +12223334444")
+    phone_number = models.CharField(max_length=17, null=True, blank=True, help_text="Optional phone number, e.g., +12223334444")
     
     is_email_verified = models.BooleanField(default=False)
     email_otp = models.CharField(max_length=6, null=True, blank=True)
@@ -240,8 +314,60 @@ class CustomUser(AbstractUser):
             users_to_notify = list(managed_users_qs) 
             updated_count = managed_users_qs.update(is_active=False)
             logger.info(f"{updated_count} users for Admin {self.email} auto-deactivated. Reason: {reason}.")
+            
+            # Stop monitoring agents for each deactivated user
+            self._stop_monitoring_for_users(users_to_notify, reason)
+            
             for user_to_notify in users_to_notify:
                 send_user_account_status_email(user_to_notify, is_activated=False, by_who=self, reason=f"Associated Admin account ({self.email}) status change: {reason}")
+    
+    def _stop_monitoring_for_users(self, users_list, reason):
+        """
+        Stops all monitoring agents and email listeners for a list of users.
+        """
+        try:
+            from monitor_app.models import Agent
+            from mail_monitor.models import EmailAccount
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            
+            channel_layer = get_channel_layer()
+            
+            for user in users_list:
+                # Stop monitoring agents
+                user_agents = Agent.objects.filter(user=user)
+                for agent in user_agents:
+                    agent.is_activity_monitoring_enabled = False
+                    agent.is_network_monitoring_enabled = False
+                    agent.is_live_streaming_enabled = False
+                    agent.save(update_fields=[
+                        'is_activity_monitoring_enabled', 
+                        'is_network_monitoring_enabled', 
+                        'is_live_streaming_enabled'
+                    ])
+                    logger.info(f"Disabled monitoring for agent {agent.agent_id} due to admin change: {reason}")
+                
+                # Stop email monitoring
+                try:
+                    email_account = EmailAccount.objects.get(user=user)
+                    if email_account.is_active or email_account.is_authenticated:
+                        email_account.is_active = False
+                        email_account.is_authenticated = False
+                        email_account.save(update_fields=['is_active', 'is_authenticated'])
+                        
+                        # Send signal to stop email listener
+                        async_to_sync(channel_layer.send)(
+                            "email-listener",
+                            {"type": "stop.listening", "account_id": email_account.id}
+                        )
+                        logger.info(f"Stopped email monitoring for user {user.email} due to admin change: {reason}")
+                except EmailAccount.DoesNotExist:
+                    pass
+                except Exception as e:
+                    logger.error(f"Failed to stop email monitoring for user {user.email}: {e}")
+                    
+        except Exception as e:
+            logger.error(f"Error stopping monitoring for users during admin deactivation: {e}")
     
     def save(self, *args, **kwargs):
         if self.email: self.email = self.email.lower()

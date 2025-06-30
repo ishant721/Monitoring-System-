@@ -85,29 +85,9 @@ async function handleLogin(event) {
             return; // Stop the process
         }
 
-        // --- STEP 2: If session login was successful, fetch the API token ---
-        console.log("Session login successful. Fetching API token...");
-        const tokenResponse = await fetch("{% url 'token_obtain_pair' %}", {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, password: password })
-        });
-
-        if (!tokenResponse.ok) {
-            throw new Error("Could not retrieve API token after login. Please check credentials.");
-        }
-
-        const tokens = await tokenResponse.json();
-
-        // --- STEP 3: CRITICAL - Save the token to localStorage ---
-        console.log("API token received. Saving to localStorage.");
-        localStorage.setItem('accessToken', tokens.access);
-        localStorage.setItem('refreshToken', tokens.refresh);
-
-        // --- STEP 4: Proceed to the intended destination ---
-        // The server-side login view will handle the redirect, so we can just follow it.
-        // Or we can force it here.
-        window.location.href = loginResponse.url; // Go where the server told us to go
+        // --- STEP 2: Login successful, redirect to dashboard ---
+        console.log("Session login successful. Redirecting...");
+        window.location.href = "{% url 'accounts:dashboard' %}";
 
     } catch (error) {
         console.error("Login process failed:", error);

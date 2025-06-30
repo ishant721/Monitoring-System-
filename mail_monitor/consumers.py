@@ -6,6 +6,8 @@ import email
 from email.header import decode_header
 from bs4 import BeautifulSoup
 import base64
+import json
+import logging
 from channels.consumer import AsyncConsumer
 from channels.db import database_sync_to_async
 from django.core.files.base import ContentFile
@@ -15,6 +17,7 @@ import logging
 import traceback
 import threading
 import time
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 # Import for handling database connections in long-running threads
 from django.db import close_old_connections
@@ -22,6 +25,47 @@ from django.db import close_old_connections
 from .models import EmailAccount, MonitoredEmail, EmailAttachment
 
 logger = logging.getLogger(__name__)
+
+class MailMonitorConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.user_id = self.scope['url_route']['kwargs']['user_id']
+        self.room_group_name = f'mail_monitor_{self.user_id}'
+
+        # Join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json['message']
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'mail_message',
+                'message': message
+            }
+        )
+
+    async def mail_message(self, event):
+        message = event['message']
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'message': message
+        }))
 
 listening_tasks = {}
 
@@ -107,11 +151,11 @@ async def fetch_and_process_with_uid(mail_connection, account, folder_name):
     status, messages = mail_connection.uid('search', None, search_criteria)
     if status != 'OK' or not messages[0]:
         logger.info(f"[Acc {account.id}] No new emails to process in '{folder_name}'."); return
-    
+
     all_uids = [int(uid) for uid in messages[0].split()]
     uids_to_process = all_uids[-100:] if last_uid is None else all_uids
     logger.info(f"[Acc {account.id}] Found {len(all_uids)} total new emails. Processing up to {len(uids_to_process)}.")
-    
+
     latest_uid_processed = last_uid
     for uid in sorted(uids_to_process):
         try:
@@ -175,9 +219,9 @@ def process_and_save_email_db(raw_bytes, account_id):
 
         account = EmailAccount.objects.get(pk=account_id)
         sender = decode_mime_words(msg.get('From', ''))
-        
+
         direction = MonitoredEmail.Direction.OUTGOING if account.user.email.lower() in sender.lower() else MonitoredEmail.Direction.INCOMING
-        
+
         subject = decode_mime_words(msg.get('Subject', 'No Subject'))
         recipients_to = decode_mime_words(msg.get('To', ''))
         recipients_cc = decode_mime_words(msg.get('Cc', ''))
@@ -187,14 +231,14 @@ def process_and_save_email_db(raw_bytes, account_id):
 
         try: date = make_aware(email.utils.parsedate_to_datetime(msg.get("Date")))
         except: date = make_aware(datetime.now())
-        
+
         body, attachments_data = extract_body_and_attachments(msg)
-        
+
         parent = None
         if in_reply_to_header := msg.get('In-Reply-To'): parent = MonitoredEmail.objects.filter(message_id=in_reply_to_header).first()
         if not parent and (references := msg.get('References')):
             if ref_ids := references.split(): parent = MonitoredEmail.objects.filter(message_id__in=ref_ids).order_by('-date').first()
-        
+
         new_email = MonitoredEmail.objects.create(
             account=account, message_id=msg_id, direction=direction, sender=sender,
             recipients_to=recipients_to, recipients_cc=recipients_cc, recipients_bcc=recipients_bcc,
@@ -203,7 +247,7 @@ def process_and_save_email_db(raw_bytes, account_id):
         )
         for attachment_data in attachments_data:
             EmailAttachment.objects.create(email=new_email, **attachment_data)
-        
+
         logger.info(f"  > [DB Save] SUCCESS | Dir: {new_email.get_direction_display()} | Sub: '{subject}'")
 
     except Exception as e:
@@ -255,7 +299,7 @@ def extract_body_and_attachments(msg):
     else:
         try: body_plain = msg.get_payload(decode=True).decode('utf-8', 'ignore')
         except: pass
-    
+
     final_body = body_html or f"<html><body>{body_plain.replace('\n', '<br>')}</body></html>"
     if final_body:
         soup = BeautifulSoup(final_body, "html.parser")
@@ -276,17 +320,17 @@ async def startup_scan_async():
     def get_active_accounts_ids():
         close_old_connections()
         return list(EmailAccount.objects.filter(is_active=True).values_list('id', flat=True))
-    
+
     active_account_ids = await get_active_accounts_ids()
     if not active_account_ids:
         logger.info("STARTUP: No active email accounts found to monitor."); return
-        
+
     for account_id in active_account_ids:
         if _listener_loop and _listener_loop.is_running():
             _listener_loop.call_soon_threadsafe(
                 lambda acc_id=account_id: asyncio.create_task(start_listener_for_account(acc_id))
             )
-        
+
     logger.info(f"STARTUP: Submitted {len(active_account_ids)} listener tasks.")
 
 def run_listener_event_loop():

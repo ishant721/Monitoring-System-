@@ -92,7 +92,21 @@
                                 <h5 class="mb-1">{{ detail.user.email }}</h5>
                                 <p class="mb-1 small text-muted">{{ detail.user.get_full_name|default:"N/A" }}</p>
                                 <p class="mb-1">
-                                    <span class="badge {% if detail.user.is_active %}bg-success{% else %}bg-danger{% endif %}">{% if detail.user.is_active %}Active{% else %}Inactive{% endif %}</span>
+                                    {% if detail.user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    <a href="{% url 'accounts:superadmin_deactivate_admin' detail.user.id %}" 
+                                       class="btn btn-danger btn-sm ms-2"
+                                       onclick="return confirm('Are you sure you want to completely deactivate this admin? This will:\n- Disable the admin account\n- Deactivate all their employees\n- Stop all monitoring agents\n- Stop email monitoring\n\nThis action cannot be easily undone.')">
+                                        <i class="fas fa-ban"></i> Deactivate All
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                    <a href="{% url 'accounts:superadmin_activate_admin' detail.user.id %}" 
+                                       class="btn btn-success btn-sm ms-2"
+                                       onclick="return confirm('Are you sure you want to reactivate this admin? This will set them to a trial account with default settings.')">
+                                        <i class="fas fa-check"></i> Reactivate
+                                    </a>
+                                {% endif %}
                                     <span class="badge bg-primary">{{ detail.user.get_admin_account_type_display }}</span>
                                 </p>
                                 {% if detail.user.admin_account_type != detail.user.AdminAccountType.SUBSCRIBED or detail.user.access_ends_at %}
@@ -116,15 +130,36 @@
                                         <p class="mb-0"><small>Reason: "{{ detail.user.trial_extension_reason|default:'N/A'|truncatewords:30 }}"</small></p>
                                     </div>
                                 {% endif %}
+                                
+                                {% if detail.user.admin_account_type == detail.user.AdminAccountType.TRIAL %}
+                                    <div class="mt-2">
+                                        <form method="post" action="{% url 'accounts:superadmin_extend_trial' detail.user.id %}" class="d-inline-flex align-items-center">
+                                            {% csrf_token %}
+                                            <input type="number" name="extension_days" min="1" max="365" placeholder="Days" class="form-control form-control-sm me-2" style="width: 80px;" required>
+                                            <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Extend trial period for {{ detail.user.email }}?')">
+                                                <i class="fas fa-calendar-plus"></i> Extend Trial
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
                             </div>
                             <div class="col-md-8">
-                                <form method="post" action="{% url 'accounts:superadmin_manage_admin_access' detail.user.id %}" class="p-2 border rounded bg-light">
+                                <form method="post" action="{% url 'accounts:superadmin_manage_admin_access' detail.user.id %}" class="p-2 border rounded bg-light mb-3">
                                     {% csrf_token %}
                                     <small class="text-muted d-block mb-2">Modify Access & Limits:</small>
                                     {{ detail.access_form|crispy }}
                                     <button type="submit" class="btn btn-sm btn-primary mt-2"><i class="fas fa-save me-1"></i>Update Settings</button>
                                 </form>
-                            </div>
+                                
+                                <div class="p-2 border rounded bg-warning bg-opacity-10">
+                                    <small class="text-muted d-block mb-2"><i class="fas fa-shield-alt me-1"></i>Feature Restrictions (Subscription Control):</small>
+                                    <form method="post" action="{% url 'accounts:superadmin_manage_feature_restrictions' detail.user.id %}">
+                                        {% csrf_token %}
+                                        {{ detail.restrictions_form|crispy }}
+                                        <button type="submit" class="btn btn-sm btn-warning mt-2"><i class="fas fa-shield-alt me-1"></i>Update Feature Access</button>
+                                    </form>
+                                </div>
+                            </div></old_str>
                         </div>
                     </div>
                 {% endfor %}

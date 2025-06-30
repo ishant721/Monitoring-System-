@@ -98,6 +98,10 @@ BACKEND_URL = ""
 API_KEY = ""
 AGENT_ID = ""
 
+# --- Global live streaming variables ---
+live_streaming_websocket = None
+live_streaming_task = None
+
 # --- FFmpeg Path ---
 FFMPEG_EXECUTABLE_NAME = ""
 if platform.system() == "Windows":
@@ -749,6 +753,168 @@ def is_within_active_schedule():
         print(f"Warning: Invalid time format in schedule for {today_weekday_str} ('{start_time_str}'-'{end_time_str}'). Error: {e}")
         return True
 
+# Placing the live streaming functions before websocket_message_handler to resolve the error
+async def start_live_streaming():
+    """Starts the live streaming task if it's enabled and not already running."""
+    global live_streaming_task
+
+    print("DEBUG: start_live_streaming() called.")
+    if not is_live_streaming_enabled_by_control:
+        print("DEBUG: Live streaming is disabled by control, cannot start.")
+        await send_control_response(False, "Live streaming is disabled by configuration.")
+        return
+
+    if live_streaming_task and not live_streaming_task.done():
+        print("DEBUG: Live streaming task is already running.")
+        await send_control_response(False, "Live streaming is already active.")
+        return
+
+    print("INFO: Control command accepted. Starting live stream task.")
+    live_streaming_task = asyncio.create_task(live_streaming_loop())
+    await send_control_response(True, "Live streaming initiated.")
+
+
+async def stop_live_streaming():
+    """Stops the live streaming task if it is running."""
+    global live_streaming_task, live_streaming_websocket
+
+    print("DEBUG: stop_live_streaming() called.")
+    if live_streaming_websocket:
+        print("INFO: Closing live streaming websocket.")
+        await live_streaming_websocket.close()
+        live_streaming_websocket = None
+
+    if live_streaming_task and not live_streaming_task.done():
+        print("INFO: Cancelling live streaming task.")
+        live_streaming_task.cancel()
+        try:
+            await live_streaming_task
+        except asyncio.CancelledError:
+            print("INFO: Live streaming task successfully cancelled.")
+        live_streaming_task = None
+    else:
+        print("DEBUG: No active live stream task to stop.")
+
+    await send_control_response(True, "Live streaming stopped.")
+
+
+def _install_opencv_non_blocking():
+    """Synchronous function to be run in a separate thread to avoid blocking asyncio loop."""
+    print("OpenCV/Numpy not found. Attempting to install non-blockingly...")
+    try:
+        process = subprocess.run(
+            [sys.executable, "-m", "pip", "install", "opencv-python", "numpy"],
+            check=True, capture_output=True, text=True
+        )
+        print("INFO: OpenCV and NumPy installed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"FATAL: Failed to install OpenCV. Pip stderr:\n{e.stderr}")
+        return False
+    except Exception as e:
+        print(f"FATAL: An unexpected error occurred during OpenCV installation: {e}")
+        return False
+
+
+async def live_streaming_loop():
+    """The main loop for capturing and sending screen frames for live streaming."""
+    global live_streaming_websocket, is_live_streaming_enabled_by_control
+
+    # --- Dependency Check ---
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:
+        installed_ok = await asyncio.to_thread(_install_opencv_non_blocking)
+        if not installed_ok:
+            is_live_streaming_enabled_by_control = False # Disable to prevent retries
+            await send_control_response(False, "Live streaming failed: could not install dependencies.")
+            return
+        import cv2
+        import numpy as np
+
+    # --- Connection and Authentication ---
+    base_ws_url = BACKEND_URL.replace('http', 'ws', 1)
+    streaming_url = f"{base_ws_url}/ws/stream/agent/{AGENT_ID}/"
+    print(f"DEBUG: [Live Stream] Attempting to connect to: {streaming_url}")
+
+    try:
+        async with websockets.connect(streaming_url) as websocket:
+            live_streaming_websocket = websocket
+            print("INFO: [Live Stream] WebSocket connection established. Authenticating...")
+
+            ### =============================================================== ###
+            ### CRITICAL FIX: SEND AUTHENTICATION PAYLOAD ON THE STREAMING SOCKET ###
+            ### =============================================================== ###
+            auth_payload = {
+                "type": "auth",
+                "api_key": API_KEY,
+                "agent_id": AGENT_ID
+            }
+            await websocket.send(json.dumps(auth_payload))
+
+            # Optional: Wait for an auth_success message from the backend.
+            # This makes the connection more robust.
+            try:
+                response = await asyncio.wait_for(websocket.recv(), timeout=5)
+                response_data = json.loads(response)
+                if response_data.get("status") != "auth_success":
+                    print(f"ERROR: [Live Stream] Authentication failed: {response_data.get('reason')}")
+                    return # Exit the loop if auth fails
+            except asyncio.TimeoutError:
+                print("WARNING: [Live Stream] Did not receive auth confirmation from server in 5s. Proceeding anyway.")
+            except Exception as e:
+                 print(f"ERROR: [Live Stream] Error receiving auth confirmation: {e}")
+                 return
+
+            print("INFO: [Live Stream] Authentication successful. Starting frame transmission.")
+
+            # --- Frame Processing Loop ---
+            while is_live_streaming_enabled_by_control:
+                try:
+                    frame_data, (width, height) = capture_raw_frame()
+                    if not frame_data:
+                        await asyncio.sleep(0.5)
+                        continue
+
+                    frame_np = np.frombuffer(frame_data, dtype=np.uint8).reshape((height, width, 3))
+                    frame_bgr = cv2.cvtColor(frame_np, cv2.COLOR_RGB2BGR)
+
+                    scale_percent = min(1.0, 720 / height)
+                    if scale_percent < 1.0:
+                        new_width = int(width * scale_percent)
+                        new_height = int(height * scale_percent)
+                        frame_resized = cv2.resize(frame_bgr, (new_width, new_height), interpolation=cv2.INTER_AREA)
+                    else:
+                        frame_resized = frame_bgr
+
+                    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
+                    result, buffer = cv2.imencode('.jpg', frame_resized, encode_param)
+
+                    if result:
+                        await websocket.send(buffer.tobytes())
+
+                    await asyncio.sleep(0.1) # Target ~10 FPS
+
+                except websockets.exceptions.ConnectionClosed:
+                    print("ERROR: [Live Stream] Connection closed by server during frame sending.")
+                    break # Exit the inner while loop
+                except Exception as e:
+                    print(f"ERROR: [Live Stream] An error occurred inside the frame processing loop: {e}")
+                    await asyncio.sleep(1) # Wait a bit before retrying
+
+    except asyncio.CancelledError:
+        print("INFO: [Live Stream] Loop was cancelled.")
+    except websockets.exceptions.InvalidURI:
+        print(f"ERROR: [Live Stream] The WebSocket URI is invalid: {streaming_url}")
+    except websockets.exceptions.ConnectionClosedError as e:
+        print(f"ERROR: [Live Stream] Connection failed. The server may have rejected the connection. Reason: {e}")
+    except Exception as e:
+        print(f"FATAL: [Live Stream] An unhandled error occurred in the connection block: {e}")
+    finally:
+        print("INFO: [Live Stream] Loop has terminated.")
+        live_streaming_websocket = None
+
 # Replace your existing websocket_message_handler with this one.
 
 async def websocket_message_handler():
@@ -853,7 +1019,7 @@ async def websocket_message_handler():
                             asyncio.create_task(stop_live_streaming())
                         else:
                             print("INFO: Live stream is correctly stopped as per config.")
-                    
+
                     # (You can add similar reconciliation for recording if needed in the future)
 
                     # 3. Save the new config and respond
@@ -1173,168 +1339,3 @@ if __name__ == "__main__":
     finally:
         print("Agent process terminated.")
         sys.exit(0)
-
-# Global live streaming variables
-live_streaming_websocket = None
-live_streaming_task = None
-
-async def start_live_streaming():
-    """Starts the live streaming task if it's enabled and not already running."""
-    global live_streaming_task
-
-    print("DEBUG: start_live_streaming() called.")
-    if not is_live_streaming_enabled_by_control:
-        print("DEBUG: Live streaming is disabled by control, cannot start.")
-        await send_control_response(False, "Live streaming is disabled by configuration.")
-        return
-
-    if live_streaming_task and not live_streaming_task.done():
-        print("DEBUG: Live streaming task is already running.")
-        await send_control_response(False, "Live streaming is already active.")
-        return
-
-    print("INFO: Control command accepted. Starting live stream task.")
-    live_streaming_task = asyncio.create_task(live_streaming_loop())
-    await send_control_response(True, "Live streaming initiated.")
-
-
-async def stop_live_streaming():
-    """Stops the live streaming task if it is running."""
-    global live_streaming_task, live_streaming_websocket
-
-    print("DEBUG: stop_live_streaming() called.")
-    if live_streaming_websocket:
-        print("INFO: Closing live streaming websocket.")
-        await live_streaming_websocket.close()
-        live_streaming_websocket = None
-
-    if live_streaming_task and not live_streaming_task.done():
-        print("INFO: Cancelling live streaming task.")
-        live_streaming_task.cancel()
-        try:
-            await live_streaming_task
-        except asyncio.CancelledError:
-            print("INFO: Live streaming task successfully cancelled.")
-        live_streaming_task = None
-    else:
-        print("DEBUG: No active live stream task to stop.")
-
-    await send_control_response(True, "Live streaming stopped.")
-
-
-def _install_opencv_non_blocking():
-    """Synchronous function to be run in a separate thread to avoid blocking asyncio loop."""
-    print("OpenCV/Numpy not found. Attempting to install non-blockingly...")
-    try:
-        process = subprocess.run(
-            [sys.executable, "-m", "pip", "install", "opencv-python", "numpy"],
-            check=True, capture_output=True, text=True
-        )
-        print("INFO: OpenCV and NumPy installed successfully.")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"FATAL: Failed to install OpenCV. Pip stderr:\n{e.stderr}")
-        return False
-    except Exception as e:
-        print(f"FATAL: An unexpected error occurred during OpenCV installation: {e}")
-        return False
-
-
-async def live_streaming_loop():
-    """The main loop for capturing and sending screen frames for live streaming."""
-    global live_streaming_websocket, is_live_streaming_enabled_by_control
-
-    # --- Dependency Check ---
-    try:
-        import cv2
-        import numpy as np
-    except ImportError:
-        installed_ok = await asyncio.to_thread(_install_opencv_non_blocking)
-        if not installed_ok:
-            is_live_streaming_enabled_by_control = False # Disable to prevent retries
-            await send_control_response(False, "Live streaming failed: could not install dependencies.")
-            return
-        import cv2
-        import numpy as np
-
-    # --- Connection and Authentication ---
-    base_ws_url = BACKEND_URL.replace('http', 'ws', 1)
-    streaming_url = f"{base_ws_url}/ws/stream/agent/{AGENT_ID}/"
-    print(f"DEBUG: [Live Stream] Attempting to connect to: {streaming_url}")
-
-    try:
-        async with websockets.connect(streaming_url) as websocket:
-            live_streaming_websocket = websocket
-            print("INFO: [Live Stream] WebSocket connection established. Authenticating...")
-
-            ### =============================================================== ###
-            ### CRITICAL FIX: SEND AUTHENTICATION PAYLOAD ON THE STREAMING SOCKET ###
-            ### =============================================================== ###
-            auth_payload = {
-                "type": "auth",
-                "api_key": API_KEY,
-                "agent_id": AGENT_ID
-            }
-            await websocket.send(json.dumps(auth_payload))
-            
-            # Optional: Wait for an auth_success message from the backend.
-            # This makes the connection more robust.
-            try:
-                response = await asyncio.wait_for(websocket.recv(), timeout=5)
-                response_data = json.loads(response)
-                if response_data.get("status") != "auth_success":
-                    print(f"ERROR: [Live Stream] Authentication failed: {response_data.get('reason')}")
-                    return # Exit the loop if auth fails
-            except asyncio.TimeoutError:
-                print("WARNING: [Live Stream] Did not receive auth confirmation from server in 5s. Proceeding anyway.")
-            except Exception as e:
-                 print(f"ERROR: [Live Stream] Error receiving auth confirmation: {e}")
-                 return
-
-            print("INFO: [Live Stream] Authentication successful. Starting frame transmission.")
-
-            # --- Frame Processing Loop ---
-            while is_live_streaming_enabled_by_control:
-                try:
-                    frame_data, (width, height) = capture_raw_frame()
-                    if not frame_data:
-                        await asyncio.sleep(0.5)
-                        continue
-
-                    frame_np = np.frombuffer(frame_data, dtype=np.uint8).reshape((height, width, 3))
-                    frame_bgr = cv2.cvtColor(frame_np, cv2.COLOR_RGB2BGR)
-
-                    scale_percent = min(1.0, 720 / height)
-                    if scale_percent < 1.0:
-                        new_width = int(width * scale_percent)
-                        new_height = int(height * scale_percent)
-                        frame_resized = cv2.resize(frame_bgr, (new_width, new_height), interpolation=cv2.INTER_AREA)
-                    else:
-                        frame_resized = frame_bgr
-
-                    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
-                    result, buffer = cv2.imencode('.jpg', frame_resized, encode_param)
-
-                    if result:
-                        await websocket.send(buffer.tobytes())
-
-                    await asyncio.sleep(0.1) # Target ~10 FPS
-
-                except websockets.exceptions.ConnectionClosed:
-                    print("ERROR: [Live Stream] Connection closed by server during frame sending.")
-                    break # Exit the inner while loop
-                except Exception as e:
-                    print(f"ERROR: [Live Stream] An error occurred inside the frame processing loop: {e}")
-                    await asyncio.sleep(1) # Wait a bit before retrying
-
-    except asyncio.CancelledError:
-        print("INFO: [Live Stream] Loop was cancelled.")
-    except websockets.exceptions.InvalidURI:
-        print(f"ERROR: [Live Stream] The WebSocket URI is invalid: {streaming_url}")
-    except websockets.exceptions.ConnectionClosedError as e:
-        print(f"ERROR: [Live Stream] Connection failed. The server may have rejected the connection. Reason: {e}")
-    except Exception as e:
-        print(f"FATAL: [Live Stream] An unhandled error occurred in the connection block: {e}")
-    finally:
-        print("INFO: [Live Stream] Loop has terminated.")
-        live_streaming_websocket = None

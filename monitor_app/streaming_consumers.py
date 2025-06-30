@@ -17,7 +17,17 @@ class LiveVideoStreamConsumer(AsyncWebsocketConsumer):
     
     async def connect(self):
         self.agent_id = self.scope['url_route']['kwargs'].get('agent_id')
-        self.user_type = self.scope['url_route']['kwargs'].get('user_type', 'viewer')
+        # Get user_type from URL kwargs or default based on path
+        self.user_type = self.scope['url_route']['kwargs'].get('user_type')
+        if not self.user_type:
+            # Determine user type from URL path
+            path = self.scope['path']
+            if '/agent/' in path:
+                self.user_type = 'agent'
+            elif '/viewer/' in path:
+                self.user_type = 'viewer'
+            else:
+                self.user_type = 'viewer'
         
         if self.user_type == 'agent':
             # Check if live streaming is enabled for this agent

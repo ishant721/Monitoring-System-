@@ -17,6 +17,9 @@ ALLOWED_HOSTS_STRING = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,*'
 ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STRING.split(',') if host.strip()]
 
 
+# ASGI Application
+ASGI_APPLICATION = 'hierarchical_auth.asgi.application'
+
 # Application definition
 INSTALLED_APPS = [
     'daphne',  # <-- ADDED for Channels real-time server

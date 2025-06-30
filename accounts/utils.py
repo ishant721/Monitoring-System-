@@ -31,7 +31,10 @@ def _send_email_with_logging(subject, plain_message, recipient_list,
         return True
     except Exception as e:
         logger.error(f"{email_type}_EMAIL: FAILED to send to {recipient_list}. Error: {type(e).__name__} - {e}")
-        logger.debug(f"{email_type}_EMAIL: Full traceback:\n{traceback.format_exc()}")
+        logger.error(f"{email_type}_EMAIL: Full traceback:\n{traceback.format_exc()}")
+        # Print to console as well for immediate debugging
+        print(f"EMAIL ERROR: {type(e).__name__} - {e}")
+        print(f"EMAIL ERROR TRACEBACK:\n{traceback.format_exc()}")
         return False
 
 def send_registration_otp_email(user_instance, request=None):

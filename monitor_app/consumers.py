@@ -53,7 +53,7 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
             if message_type == 'pair_agent':
                 await self.handle_pairing(content)
                 return
-                
+
             if not self.scope.get('authenticated'):
                 await self.handle_authentication(content)
                 return
@@ -64,7 +64,7 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
                 await self.process_key_log(content)
             elif message_type == 'control_response':
                 await self.process_control_response(content)
-                
+
         except Exception as e:
             logger.error(f"Error processing WebSocket message for agent {self.agent_id}: {e}", exc_info=True)
 
@@ -74,7 +74,7 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
         if not pairing_token or not new_agent_id:
             await self.close(code=4005, reason="Token and Agent ID required")
             return
-        
+
         success = await self.pair_agent_with_user(pairing_token, new_agent_id)
         if success:
             await self.send_json({"type": "pairing_success", "agent_id": new_agent_id})
@@ -142,7 +142,7 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
                     screenshot_file = ContentFile(decoded_file_bytes, name=f'ss_{int(time.time())}.png')
                 except Exception as e:
                     logger.warning(f"Could not decode screenshot for {agent_id}: {e}")
-            
+
             Agent.objects.update_or_create(
                 agent_id=agent_id,
                 defaults={
@@ -176,10 +176,10 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
         if not self.scope.get('authenticated'):
             logger.warning(f"Cannot send control command to unauthenticated agent {self.agent_id}")
             return
-        
+
         control_msg = event.copy()
         control_msg['type'] = 'control'
-        
+
         try:
             await self.send_json(control_msg)
             logger.info(f"Control command sent to agent {self.agent_id}")
@@ -280,3 +280,124 @@ class DashboardConsumer(AsyncJsonWebsocketConsumer):
                 "active_browser_url": agent.active_browser_url
             })
         return agents_data
+
+# Adding MonitoringConsumer from the changes, placed after DashboardConsumer since it's another type of consumer.
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
+from django.contrib.auth import get_user_model
+from .models import Agent
+
+User = get_user_model()
+
+class MonitoringConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        # Get the agent_id from the URL route
+        self.agent_id = self.scope['url_route']['kwargs']['agent_id']
+        self.room_group_name = f'monitoring_{self.agent_id}'
+
+        # Join room group
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+
+        await self.accept()
+        print(f"WebSocket connected for agent: {self.agent_id}")
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+        print(f"WebSocket disconnected for agent: {self.agent_id}")
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        try:
+            text_data_json = json.loads(text_data)
+            message_type = text_data_json.get('type')
+
+            if message_type == 'agent_status':
+                await self.handle_agent_status(text_data_json)
+            elif message_type == 'screen_data':
+                await self.handle_screen_data(text_data_json)
+            elif message_type == 'keystroke_data':
+                await self.handle_keystroke_data(text_data_json)
+
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({
+                'error': 'Invalid JSON format'
+            }))
+
+    async def handle_agent_status(self, data):
+        # Update agent status in database
+        await self.update_agent_status(data)
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'agent_status_update',
+                'data': data
+            }
+        )
+
+    async def handle_screen_data(self, data):
+        # Process screen data
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'screen_update',
+                'data': data
+            }
+        )
+
+    async def handle_keystroke_data(self, data):
+        # Process keystroke data
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'keystroke_update',
+                'data': data
+            }
+        )
+
+    # Receive message from room group
+    async def agent_status_update(self, event):
+        data = event['data']
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'type': 'agent_status_update',
+            'data': data
+        }))
+
+    async def screen_update(self, event):
+        data = event['data']
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'type': 'screen_update',
+            'data': data
+        }))
+
+    async def keystroke_update(self, event):
+        data = event['data']
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({
+            'type': 'keystroke_update',
+            'data': data
+        }))
+
+    @database_sync_to_async
+    def update_agent_status(self, data):
+        try:
+            agent = Agent.objects.get(id=self.agent_id)
+            agent.is_active = data.get('is_active', True)
+            agent.last_seen = data.get('timestamp')
+            agent.save()
+        except Agent.DoesNotExist:
+            pass

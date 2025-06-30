@@ -435,7 +435,7 @@ def keylog_history_api_view(request):
 @permission_classes([IsAuthenticated])
 def live_streams_api_view(request):
     """
-    Returns a list of agents currently live streaming
+    Get all currently live streaming agents
     """
     user = request.user
     live_only = request.GET.get('live_only', 'false').lower() == 'true'
@@ -443,9 +443,9 @@ def live_streams_api_view(request):
     try:
         # Get agents based on user role
         if user.role == CustomUser.SUPERADMIN:
-            agents = Agent.objects.select_related('user').all()
+            agents = Agent.objects.all()
         elif user.role == CustomUser.ADMIN:
-            agents = Agent.objects.select_related('user').filter(user__company_admin=user)
+            agents = Agent.objects.filter(user__company_admin=user)
         else:
             return Response({"error": "Insufficient permissions"}, status=status.HTTP_403_FORBIDDEN)
 
@@ -453,30 +453,23 @@ def live_streams_api_view(request):
         if live_only:
             agents = agents.filter(is_live_streaming=True, is_live_streaming_enabled=True)
 
-        # Build response
-        streams_data = []
-        timeout = getattr(settings, 'AGENT_ONLINE_TIMEOUT_SECONDS', 30)
-
+        agents_data = []
         for agent in agents:
-            is_online = (timezone.now() - agent.last_seen).total_seconds() < timeout
-            if live_only and not (is_online and agent.is_live_streaming):
-                continue
+            if agent.user:
+                agents_data.append({
+                    'agent_id': agent.agent_id,
+                    'user_email': agent.user.email,
+                    'is_live_streaming': agent.is_live_streaming,
+                    'is_live_streaming_enabled': agent.is_live_streaming_enabled,
+                    'last_seen': agent.last_seen.isoformat() if agent.last_seen else None,
+                    'live_stream_url': agent.live_stream_url
+                })
 
-            streams_data.append({
-                "agent_id": agent.agent_id,
-                "user_email": agent.user.email if agent.user else "Unknown",
-                "is_live_streaming": agent.is_live_streaming,
-                "is_live_streaming_enabled": agent.is_live_streaming_enabled,
-                "live_stream_url": agent.live_stream_url,
-                "last_seen": agent.last_seen.isoformat(),
-                "is_online": is_online
-            })
-
-        return Response(streams_data, status=status.HTTP_200_OK)
+        return Response(agents_data, status=status.HTTP_200_OK)
 
     except Exception as e:
-        logger.error(f"Error fetching live streams: {e}")
-        return Response({"error": "Failed to fetch live streams"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"Error getting live streams: {e}")
+        return Response({"error": "Failed to get live streams"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])

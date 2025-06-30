@@ -1,4 +1,4 @@
-# accounts/urls.py
+# Adding URL for feature restrictions management to accounts/urls.py
 
 from django.urls import path
 from . import views
@@ -25,11 +25,11 @@ urlpatterns = [
     path('dashboard/superadmin/', views.superadmin_dashboard_view, name='superadmin_dashboard'),
     path('dashboard/admin/', views.admin_dashboard_view, name='admin_dashboard'),
     path('dashboard/user/', views.user_dashboard_view, name='user_dashboard'),
-   
+
     # --- Approval Actions ---
     path('approve/admin/<int:user_id>/', views.approve_admin_view, name='approve_admin'),
     path('approve/user/<int:user_id>/', views.approve_user_view, name='approve_user'),
-    
+
     # --- User Creation by Admins/Superadmins ---
     path('superadmin/add-admin/', views.superadmin_add_admin_view, name='superadmin_add_admin'),
     path('admin/add-user/', views.admin_add_user_view, name='admin_add_user'),
@@ -37,7 +37,7 @@ urlpatterns = [
     # --- User Status Management by Admins ---
     path('admin/manage-user/<int:user_id>/activate/', views.admin_manage_user_status_view, {'activate': True}, name='admin_activate_user'),
     path('admin/manage-user/<int:user_id>/deactivate/', views.admin_manage_user_status_view, {'activate': False}, name='admin_deactivate_user'),
-    
+
     # --- Admin Account Management by Superadmins ---
     path('superadmin/manage-admin-access/<int:admin_id>/', views.superadmin_manage_admin_access_view, name='superadmin_manage_admin_access'),
     path('admin/request-trial-extension/', views.admin_request_trial_extension_view, name='admin_request_trial_extension'),
@@ -45,6 +45,9 @@ urlpatterns = [
     # --- User-specific pages ---
     path('user-detail/<int:user_id>/', views.admin_view_user_detail, name='admin_view_user_detail'),
     path('download-agent/', views.user_download_agent_view, name='user_download_agent'),
-    
-    # The incorrect line has been removed from here.
+    path('superadmin/deactivate-admin/<int:admin_id>/', views.superadmin_deactivate_admin_view, name='superadmin_deactivate_admin'),
+    path('superadmin/activate-admin/<int:admin_id>/', views.superadmin_activate_admin_view, name='superadmin_activate_admin'),
+    path('superadmin/extend-trial/<int:admin_id>/', views.superadmin_extend_trial_view, name='superadmin_extend_trial'),
+    path('admin/configure-monitoring/<int:user_id>/', views.admin_configure_monitoring_view, name='admin_configure_monitoring'),
+    path('admin/manage-features/<int:admin_id>/', views.superadmin_manage_feature_restrictions_view, name='superadmin_manage_feature_restrictions'),
 ]

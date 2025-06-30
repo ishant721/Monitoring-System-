@@ -20,9 +20,10 @@ from .forms import (
     PasswordResetRequestForm, SetNewPasswordForm, 
     SuperadminAddAdminForm, AdminAddUserForm,
     SuperadminManageAdminAccessForm, 
-    AdminTrialExtensionRequestForm
+    AdminTrialExtensionRequestForm, SuperadminTrialExtensionForm,
+    AgentMonitoringConfigForm, AdminFeatureRestrictionsForm
 )
-from .models import CustomUser
+from .models import CustomUser, AdminFeatureRestrictions
 from .utils import (
     send_registration_otp_email, send_password_reset_otp_email,
     send_admin_registration_approval_request_email,
@@ -74,7 +75,7 @@ def verify_otp_view(request):
     if not otp_flow:
         messages.error(request, "Invalid OTP attempt or session expired.")
         return redirect('accounts:login')
-    
+
     if otp_flow == 'registration' and user.is_email_verified:
         messages.info(request, "Your email is already verified.")
         request.session['last_otp_verified_user_id_for_pending_page'] = user.id
@@ -86,25 +87,28 @@ def verify_otp_view(request):
         form = OTPVerificationForm(request.POST)
         if form.is_valid():
             otp = form.cleaned_data['otp']
+            if not user.email_otp:
+                messages.error(request, 'No OTP found. Please request a new one.')
+                return redirect('accounts:verify_otp')
             if user.email_otp == otp and user.is_otp_valid():
                 user.email_otp = None 
                 user.otp_created_at = None
-                
+
                 if otp_flow == 'registration':
                     user.is_email_verified = True
                     user.save(update_fields=['is_email_verified', 'email_otp', 'otp_created_at'])
                     messages.success(request, 'Email verified successfully!')
-                    
+
                     if user.role == CustomUser.ADMIN:
                         send_admin_registration_approval_request_email(user, request)
                     elif user.role == CustomUser.USER and user.company_admin:
                         send_user_registration_approval_request_email(user, user.company_admin, request)
-                    
+
                     request.session['last_otp_verified_user_id_for_pending_page'] = user.id
                     if 'otp_user_id' in request.session: del request.session['otp_user_id']
                     if 'otp_flow' in request.session: del request.session['otp_flow']
                     return redirect('accounts:registration_pending_approval')
-                
+
                 elif otp_flow == 'password_reset':
                     user.save(update_fields=['email_otp', 'otp_created_at'])
                     messages.success(request, 'OTP verified. Please set your new password.')
@@ -113,7 +117,7 @@ def verify_otp_view(request):
                 messages.error(request, 'Invalid or expired OTP. Please try again or request a new one.')
     else:
         form = OTPVerificationForm()
-    
+
     purpose = "Account Email Verification" if otp_flow == 'registration' else "Password Reset"
     return render(request, 'accounts/verify_otp.html', {'form': form, 'verification_type': 'Email OTP', 'user_email': user.email, 'purpose': purpose, 'otp_flow': otp_flow})
 
@@ -127,7 +131,7 @@ def registration_pending_approval_view(request):
     except CustomUser.DoesNotExist:
         messages.error(request, "User context not found for pending approval page. Please register again.")
         return redirect('accounts:register')
-    
+
     message_text = "Your account registration is complete and your email has been verified. "
     if user.role == CustomUser.ADMIN:
         message_text += "Your account is now awaiting approval from a Superadmin. They have been notified."
@@ -144,7 +148,7 @@ def resend_registration_email_otp_view(request):
     if request.session.get('otp_flow') != 'registration':
         messages.error(request,"Invalid request for resending registration OTP.")
         return redirect('accounts:register')
-    
+
     if user.is_email_verified:
         messages.info(request,"Your email address is already verified.")
         return redirect('accounts:registration_pending_approval')
@@ -206,23 +210,27 @@ def login_view(request):
     elif request.user.is_authenticated:
         auth_logout(request)
         messages.info(request,"You have been logged out. Please log in using the application form.")
-    
+
     form_to_render = CustomAuthenticationForm(request)
     if request.method == 'POST':
         form = CustomAuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user_to_login = form.get_user()
-            
-            from django.contrib.sessions.models import Session
-            current_session_key = request.session.session_key 
-            for session_obj in Session.objects.filter(expire_date__gte=timezone.now()):
-                if session_obj.get_decoded().get('_auth_user_id') == str(user_to_login.pk) and session_obj.session_key != current_session_key:
-                    session_obj.delete()
-            
+
+            # Clear other sessions for this user
+            try:
+                from django.contrib.sessions.models import Session
+                current_session_key = request.session.session_key 
+                for session_obj in Session.objects.filter(expire_date__gte=timezone.now()):
+                    session_data = session_obj.get_decoded()
+                    if session_data.get('_auth_user_id') == str(user_to_login.pk) and session_obj.session_key != current_session_key:
+                        session_obj.delete()
+            except Exception as e:
+                logger.warning(f"Error clearing sessions for user {user_to_login.email}: {e}")
+
             auth_login(request, user_to_login)
-            response = redirect(settings.LOGIN_REDIRECT_URL)
-            messages.success(request,f'Welcome back, {user_to_login.get_full_name()}!')
-            return response
+            messages.success(request, f'Welcome back, {user_to_login.get_full_name()}!')
+            return redirect(settings.LOGIN_REDIRECT_URL)
         else:
             form_to_render = form
     return render(request, 'accounts/login.html', {'form': form_to_render})
@@ -252,10 +260,14 @@ def superadmin_dashboard_view(request):
     admins_query = CustomUser.objects.filter(role=CustomUser.ADMIN).order_by('email')
     admin_details_list = []
     for admin in admins_query:
+        # Get or create feature restrictions for this admin
+        restrictions = AdminFeatureRestrictions.get_or_create_for_admin(admin)
+        
         admin_details_list.append({
             'user': admin,
             'current_users': admin.get_current_approved_users_count(),
             'access_form': SuperadminManageAdminAccessForm(instance=admin, prefix=f"access_form_{admin.pk}"),
+            'restrictions_form': AdminFeatureRestrictionsForm(instance=restrictions, prefix=f"restrictions_form_{admin.pk}"),
             'is_admin_access_active': admin.is_admin_access_active,
             'access_days_remaining': admin.access_days_remaining,
         })
@@ -298,7 +310,7 @@ def approve_admin_view(request, user_id):
              admin_to_approve.max_allowed_users = admin_to_approve.max_allowed_users if admin_to_approve.max_allowed_users is not None else 0
              admin_to_approve.access_granted_by = request.user
              messages.info(request, f"Admin {admin_to_approve.email} approved and set to a default {default_trial_days}-day trial. Please review their access settings.")
-        
+
         admin_to_approve.save()
         messages.success(request, f"Admin {admin_to_approve.email} has been approved and activated.")
         send_admin_access_status_email(admin_to_approve, request, triggered_by_superadmin=request.user)
@@ -317,18 +329,18 @@ def superadmin_manage_admin_access_view(request, admin_id):
             admin_instance_to_save = form.save(commit=False)
             admin_instance_to_save.access_granted_by = request.user
             new_duration_days = form.cleaned_data.get('new_access_duration_days')
-            
+
             if admin_instance_to_save.admin_account_type == CustomUser.AdminAccountType.EXPIRED:
                 admin_instance_to_save.access_ends_at = timezone.now()
             elif new_duration_days is not None and new_duration_days >= 0:
                 admin_instance_to_save.access_ends_at = timezone.now() + timedelta(days=new_duration_days)
             elif admin_instance_to_save.admin_account_type == CustomUser.AdminAccountType.SUBSCRIBED and new_duration_days is None:
                 admin_instance_to_save.access_ends_at = None
-            
+
             if admin_instance_to_save.admin_account_type != CustomUser.AdminAccountType.TRIAL:
                 admin_instance_to_save.trial_extension_requested = False
                 admin_instance_to_save.trial_extension_reason = None
-            
+
             admin_instance_to_save.save()
             messages.success(request, f"Access settings for {admin_user.email} updated successfully.")
             send_admin_access_status_email(admin_instance_to_save, request, triggered_by_superadmin=request.user)
@@ -336,7 +348,7 @@ def superadmin_manage_admin_access_view(request, admin_id):
             if original_trial_extension_requested and not admin_instance_to_save.trial_extension_requested:
                 is_extension_approved = admin_instance_to_save.admin_account_type == CustomUser.AdminAccountType.TRIAL and admin_instance_to_save.is_admin_access_active
                 send_admin_trial_extension_status_email(admin_instance_to_save, is_extension_approved, request.user, "Your trial status has been updated.", request)
-            
+
             return redirect('accounts:superadmin_dashboard')
         else:
             for field, errors in form.errors.items(): 
@@ -349,12 +361,12 @@ def admin_dashboard_view(request):
     """
     The main dashboard for an Admin. It displays their own account status,
     user management tables, and links to other dashboards.
-    
+
     This view now also checks if the admin has configured the email monitoring
     settings to display the correct card in the template.
     """
     viewer = request.user
-    
+
     # Initialize the context dictionary. 
     # The is_superadmin_view flag can be used in the template to show/hide certain elements.
     context = {
@@ -363,12 +375,12 @@ def admin_dashboard_view(request):
 
     # This block gathers all the data specific to an Admin's account
     if viewer.role == CustomUser.ADMIN:
-        
+
         # --- NEW LOGIC TO CHECK EMAIL CONFIGURATION ---
         # This checks if a CompanyEmailConfig object linked to this admin exists in the database.
         # The .exists() method is very efficient as it doesn't retrieve the object, just checks for its presence.
         has_email_config = CompanyEmailConfig.objects.filter(admin=viewer).exists()
-        
+
         # --- Existing logic for account expiry warnings ---
         days_left = viewer.access_days_remaining
         warning_days = getattr(settings, 'ADMIN_ACCESS_EXPIRY_WARNING_DAYS', 3)
@@ -387,9 +399,13 @@ def admin_dashboard_view(request):
                 trial_extension_form = AdminTrialExtensionRequestForm()
 
         # Update the context with all admin-specific data
+        # Get feature restrictions for this admin
+        feature_restrictions = AdminFeatureRestrictions.get_or_create_for_admin(viewer)
+        
         context.update({
             'is_admin_role_view': True,
             'admin_user_instance': viewer,
+            'feature_restrictions': feature_restrictions,
             'impending_expiry_notification': impending_expiry_notification,
             'trial_extension_form_for_admin': trial_extension_form,
             'can_approve_more_flag': viewer.can_approve_more_users(),
@@ -398,14 +414,14 @@ def admin_dashboard_view(request):
             'add_user_form': AdminAddUserForm(prefix="add_new_user_by_admin_form") if viewer.can_approve_more_users() else None,
             'has_email_config': has_email_config, # <-- Passing the new flag to the template
         })
-    
+
     # --- Common logic for both Admin and Superadmin ---
     # This section fetches the lists of users to be displayed in the tables.
-    
+
     # If the viewer is a regular Admin, filter to only their company's users.
     # If the viewer is a Superadmin, this filter is empty, so they see all users.
     user_filter = {'company_admin': viewer} if viewer.role == CustomUser.ADMIN else {}
-    
+
     context['pending_users'] = CustomUser.objects.filter(
         role=CustomUser.USER, 
         is_active=False, 
@@ -413,12 +429,12 @@ def admin_dashboard_view(request):
         is_email_verified=True, 
         **user_filter
     ).select_related('company_admin')
-    
+
     context['managed_users'] = CustomUser.objects.filter(
         role=CustomUser.USER, 
         **user_filter
     ).select_related('approved_by', 'company_admin').order_by('-is_active', 'email')
-    
+
     # Render the final template with the complete context
     return render(request, 'accounts/admin_dashboard.html', context)
 
@@ -480,12 +496,7 @@ def approve_user_view(request, user_id):
         messages.success(request, f"User {user_to_approve.email} has been approved and activated.")
         send_user_account_status_email(user_to_approve, is_activated=True, by_who=approver, request=request)
 
-    user_to_approve.is_active=True; user_to_approve.approved_by=approver
-    user_to_approve.save(update_fields=['is_active','approved_by'])
-    messages.success(request, f"User {user_to_approve.email} has been approved and activated.")
-    send_user_account_status_email(user_to_approve, is_activated=True, by_who=approver, request=request)
-    
-    # --- ADD THE SAME START LOGIC HERE ---
+    # --- START EMAIL LISTENER IF EMAIL ACCOUNT EXISTS ---
     try:
         email_account = EmailAccount.objects.get(user=user_to_approve)
         email_account.is_active = True
@@ -502,7 +513,6 @@ def approve_user_view(request, user_id):
         logger.error(f"Failed to start email listener for {user_to_approve.email} on approval: {e}")
 
     return redirect('accounts:admin_dashboard')
-    return redirect('accounts:admin_dashboard')
 
 @login_required
 @admin_required
@@ -517,13 +527,13 @@ def admin_manage_user_status_view(request, user_id, activate):
     """
     target_user = get_object_or_404(CustomUser, pk=user_id, role=CustomUser.USER)
     manager = request.user
-    
+
     # Authorization check: Superadmin can manage anyone. Admin can only manage their own users.
     is_authorized = (manager.is_superuser) or (manager.role == CustomUser.ADMIN and target_user.company_admin == manager)
     if not is_authorized:
         messages.error(request, "You are not authorized to manage this user.")
         return redirect('accounts:admin_dashboard')
-    
+
     action_msg = ""
     original_is_active = target_user.is_active
     channel_layer = get_channel_layer()
@@ -536,15 +546,15 @@ def admin_manage_user_status_view(request, user_id, activate):
             if manager.role == CustomUser.ADMIN and not manager.can_approve_more_users():
                 messages.error(request, f"Cannot activate {target_user.email}: User limit reached or your account access is inactive.")
                 return redirect('accounts:admin_dashboard')
-            
+
             # Activate the user in the database
             target_user.is_active = True
             if not target_user.approved_by: target_user.approved_by = manager
             target_user.save(update_fields=['is_active', 'approved_by'] if not target_user.approved_by else ['is_active'])
-            
+
             action_msg = "activated"
             send_user_account_status_email(target_user, is_activated=True, by_who=manager, request=request)
-            
+
             # Note: We do NOT automatically start the listener here. The user must
             # re-authenticate their email credentials to start monitoring. This is a
             # security measure.
@@ -553,39 +563,432 @@ def admin_manage_user_status_view(request, user_id, activate):
         if not original_is_active:
             messages.warning(request, f"User {target_user.email} is already inactive.")
         else:
-            # Deactivate the user in the database
-            target_user.is_active = False
-            target_user.save(update_fields=['is_active'])
-            
+            # Deactivate the user and stop all their agents
+            _deactivate_user_and_agents(target_user, manager)
+
             action_msg = "deactivated"
             send_user_account_status_email(target_user, is_activated=False, by_who=manager, request=request)
 
-            # --- UPDATED LOGIC: Also reset the email auth status and stop the listener ---
-            try:
-                email_account = EmailAccount.objects.get(user=target_user)
-                
-                # Check if there's anything to do to avoid unnecessary DB writes/signals
-                if email_account.is_active or email_account.is_authenticated:
-                    email_account.is_active = False
-                    email_account.is_authenticated = False # <-- RESET THE AUTH FLAG
-                    email_account.save(update_fields=['is_active', 'is_authenticated'])
-                    
-                    # Send the signal to the background worker to stop the task
-                    async_to_sync(channel_layer.send)(
-                        "email-listener",
-                        {"type": "stop.listening", "account_id": email_account.id}
-                    )
-                    logger.info(f"Admin {manager.email} deactivated user {target_user.email}, stopping their email listener and resetting auth status.")
-            except EmailAccount.DoesNotExist:
-                # This is normal if the user never set up their email. Nothing to do.
-                pass 
-            except Exception as e:
-                logger.error(f"Failed to stop email listener for {target_user.email} on deactivation: {e}")
-
     if action_msg:
         messages.success(request, f"User {target_user.email} has been successfully {action_msg}.")
-    
+
     return redirect('accounts:admin_dashboard')
+
+
+def _deactivate_user_and_agents(user, deactivated_by):
+    """
+    Helper function to deactivate a user and stop all their monitoring agents.
+    This includes stopping email listeners and disabling agent monitoring.
+    """
+    from monitor_app.models import Agent
+    from mail_monitor.models import EmailAccount
+
+    user.is_active = False
+    user.save(update_fields=['is_active'])
+
+    channel_layer = get_channel_layer()
+
+    # Stop all monitoring agents for this user
+    user_agents = Agent.objects.filter(user=user)
+    for agent in user_agents:
+        # Disable the agent (you could also delete it if preferred)
+        agent.is_activity_monitoring_enabled = False
+        agent.is_network_monitoring_enabled = False
+        agent.is_live_streaming_enabled = False
+        agent.save(update_fields=[
+            'is_activity_monitoring_enabled', 
+            'is_network_monitoring_enabled', 
+            'is_live_streaming_enabled'
+        ])
+        logger.info(f"Disabled monitoring for agent {agent.agent_id} belonging to user {user.email}")
+
+    # Stop email monitoring
+    try:
+        email_account = EmailAccount.objects.get(user=user)
+
+        if email_account.is_active or email_account.is_authenticated:
+            email_account.is_active = False
+            email_account.is_authenticated = False
+            email_account.save(update_fields=['is_active', 'is_authenticated'])
+
+            # Send the signal to the background worker to stop the task
+            async_to_sync(channel_layer.send)(
+                "email-listener",
+                {"type": "stop.listening", "account_id": email_account.id}
+            )
+            logger.info(f"User {user.email} deactivated, stopping their email listener and resetting auth status.")
+    except EmailAccount.DoesNotExist:
+        pass 
+    except Exception as e:
+        logger.error(f"Failed to stop email listener for {user.email} on deactivation: {e}")
+
+
+def _deactivate_admin_and_cascade(admin_user, deactivated_by):
+    """
+    Helper function to deactivate an admin and cascade the deactivation to all their employees.
+    This stops all monitoring for the admin's company.
+    """
+    from monitor_app.models import Agent
+    from mail_monitor.models import EmailAccount, CompanyEmailConfig
+
+    # Deactivate the admin
+    admin_user.is_active = False
+    admin_user.max_allowed_users = 0
+    admin_user.admin_account_type = CustomUser.AdminAccountType.EXPIRED
+    admin_user.save(update_fields=['is_active', 'max_allowed_users', 'admin_account_type'])
+
+    # Get all employees under this admin
+    employees = CustomUser.objects.filter(company_admin=admin_user, role=CustomUser.USER)
+
+    channel_layer = get_channel_layer()
+
+    # Deactivate all employees and their agents
+    for employee in employees:
+        if employee.is_active:
+            _deactivate_user_and_agents(employee, deactivated_by)
+            send_user_account_status_email(
+                employee, 
+                is_activated=False, 
+                by_who=deactivated_by, 
+                reason=f"Company admin {admin_user.email} has been deactivated"
+            )
+
+    # Disable company email monitoring configuration
+    try:
+        company_config = CompanyEmailConfig.objects.get(admin=admin_user)
+        company_config.is_monitoring_enabled = False
+        company_config.save(update_fields=['is_monitoring_enabled'])
+        logger.info(f"Disabled company email monitoring for admin {admin_user.email}")
+    except CompanyEmailConfig.DoesNotExist:
+        pass
+    except Exception as e:
+        logger.error(f"Failed to disable company email monitoring for admin {admin_user.email}: {e}")
+
+    logger.info(f"Admin {admin_user.email} and all their employees have been deactivated by {deactivated_by.email}")
+
+
+@login_required
+@superadmin_required
+def superadmin_deactivate_admin_view(request, admin_id):
+    """
+    New view to allow superadmins to completely deactivate an admin and all their employees.
+    This is a comprehensive shutdown of the admin's company operations.
+    """
+    admin_user = get_object_or_404(CustomUser, pk=admin_id, role=CustomUser.ADMIN)
+
+    if not admin_user.is_active:
+        messages.warning(request, f"Admin {admin_user.email} is already inactive.")
+        return redirect('accounts:superadmin_dashboard')
+
+    # Get count of employees that will be affected
+    employee_count = CustomUser.objects.filter(company_admin=admin_user, role=CustomUser.USER, is_active=True).count()
+
+    # Perform the cascading deactivation
+    _deactivate_admin_and_cascade(admin_user, request.user)
+
+    # Send notification to the admin
+    send_user_account_status_email(
+        admin_user, 
+        is_activated=False, 
+        by_who=request.user, 
+        reason="Account deactivated by superadmin - all monitoring privileges withdrawn"
+    )
+
+    messages.success(
+        request, 
+        f"Admin {admin_user.email} has been completely deactivated. {employee_count} employees were also deactivated and all monitoring agents stopped."
+    )
+
+    return redirect('accounts:superadmin_dashboard')
+
+
+@login_required
+@superadmin_required
+def superadmin_activate_admin_view(request, admin_id):
+    """
+    View to allow superadmins to reactivate a deactivated admin.
+    Sets them to trial with default settings.
+    """
+    admin_user = get_object_or_404(CustomUser, pk=admin_id, role=CustomUser.ADMIN)
+
+    if admin_user.is_active and admin_user.is_admin_access_active:
+        messages.warning(request, f"Admin {admin_user.email} is already active.")
+        return redirect('accounts:superadmin_dashboard')
+
+    # Reactivate the admin with trial settings
+    admin_user.is_active = True
+    admin_user.admin_account_type = CustomUser.AdminAccountType.TRIAL
+    default_trial_days = getattr(settings, 'DEFAULT_ADMIN_TRIAL_DAYS', 7)
+    admin_user.access_ends_at = timezone.now() + timedelta(days=default_trial_days)
+    admin_user.max_allowed_users = 5  # Default user limit
+    admin_user.access_granted_by = request.user
+    admin_user.trial_extension_requested = False
+    admin_user.trial_extension_reason = None
+    admin_user.save()
+
+    # Send notification to the admin
+    send_admin_access_status_email(admin_user, request, triggered_by_superadmin=request.user)
+
+    messages.success(
+        request, 
+        f"Admin {admin_user.email} has been reactivated with a {default_trial_days}-day trial period and 5 user limit."
+    )
+
+    return redirect('accounts:superadmin_dashboard')
+
+
+@login_required
+@superadmin_required
+def superadmin_extend_trial_view(request, admin_id):
+    """
+    View to allow superadmins to extend an admin's trial period by adding days.
+    """
+    admin_user = get_object_or_404(CustomUser, pk=admin_id, role=CustomUser.ADMIN)
+
+    if admin_user.admin_account_type != CustomUser.AdminAccountType.TRIAL:
+        messages.error(request, f"Admin {admin_user.email} is not on a trial account. Cannot extend trial.")
+        return redirect('accounts:superadmin_dashboard')
+
+    if request.method == 'POST':
+        from .forms import SuperadminTrialExtensionForm
+        form = SuperadminTrialExtensionForm(request.POST)
+        if form.is_valid():
+            extension_days = form.cleaned_data['extension_days']
+
+            # Calculate new end date by adding days to current end date
+            if admin_user.access_ends_at:
+                # If trial hasn't expired yet, add to existing end date
+                if admin_user.access_ends_at > timezone.now():
+                    new_end_date = admin_user.access_ends_at + timedelta(days=extension_days)
+                else:
+                    # If trial has expired, add to current time
+                    new_end_date = timezone.now() + timedelta(days=extension_days)
+            else:
+                # No end date set, start from now
+                new_end_date = timezone.now() + timedelta(days=extension_days)
+
+            admin_user.access_ends_at = new_end_date
+            admin_user.access_granted_by = request.user
+            admin_user.trial_extension_requested = False
+            admin_user.trial_extension_reason = None
+            admin_user.save()
+
+            # Send notification to the admin
+            send_admin_access_status_email(admin_user, request, triggered_by_superadmin=request.user)
+
+            messages.success(
+                request, 
+                f"Extended trial for {admin_user.email} by {extension_days} days. New end date: {new_end_date.strftime('%B %d, %Y')}"
+            )
+        else:
+            messages.error(request, "Invalid extension days. Please enter a value between 1 and 365.")
+
+    return redirect('accounts:superadmin_dashboard')
+
+
+@login_required
+@superadmin_required
+def superadmin_manage_feature_restrictions_view(request, admin_id):
+    """
+    View to allow superadmins to manage feature restrictions for admin companies.
+    This controls what monitoring features are available based on subscription level.
+    """
+    admin_user = get_object_or_404(CustomUser, pk=admin_id, role=CustomUser.ADMIN)
+    restrictions = AdminFeatureRestrictions.get_or_create_for_admin(admin_user)
+    
+    form_prefix = f"restrictions_form_{admin_user.pk}"
+    
+    if request.method == 'POST':
+        form = AdminFeatureRestrictionsForm(request.POST, instance=restrictions, prefix=form_prefix)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, 
+                f"Feature restrictions updated for {admin_user.email}. These changes will take effect immediately."
+            )
+            
+            # If certain premium features are disabled, we should also disable them on existing agents
+            _update_existing_agents_based_on_restrictions(admin_user, restrictions)
+            
+        else:
+            for field, errors in form.errors.items():
+                messages.error(request, f"Feature Restrictions Error ({admin_user.email}) - {field}: {'; '.join(errors)}")
+    
+    return redirect('accounts:superadmin_dashboard')
+
+
+def _update_existing_agents_based_on_restrictions(admin_user, restrictions):
+    """
+    Helper function to update existing agents when feature restrictions change.
+    This ensures that if a feature is disabled, existing agents lose access immediately.
+    """
+    try:
+        from monitor_app.models import Agent
+        
+        # Get all agents for users under this admin
+        affected_agents = Agent.objects.filter(user__company_admin=admin_user)
+        
+        update_fields = []
+        updates = {}
+        
+        # Disable features that are no longer allowed
+        if not restrictions.can_use_activity_monitoring:
+            updates['is_activity_monitoring_enabled'] = False
+            update_fields.append('is_activity_monitoring_enabled')
+            
+        if not restrictions.can_use_network_monitoring:
+            updates['is_network_monitoring_enabled'] = False
+            update_fields.append('is_network_monitoring_enabled')
+            
+            
+        if not restrictions.can_use_live_streaming:
+            updates['is_live_streaming_enabled'] = False
+            update_fields.append('is_live_streaming_enabled')
+            
+        if not restrictions.can_use_video_recording:
+            updates['is_video_recording_enabled'] = False
+            update_fields.append('is_video_recording_enabled')
+            
+        if not restrictions.can_use_keystroke_logging:
+            updates['is_keystroke_logging_enabled'] = False
+            update_fields.append('is_keystroke_logging_enabled')
+            
+        if not restrictions.can_use_email_monitoring:
+            updates['is_email_monitoring_enabled'] = False
+            update_fields.append('is_email_monitoring_enabled')
+        
+        if updates:
+            affected_agents.update(**updates)
+            logger.info(f"Updated {affected_agents.count()} agents for admin {admin_user.email} based on new feature restrictions")
+            
+    except Exception as e:
+        logger.error(f"Failed to update agents for admin {admin_user.email} after restriction changes: {e}")
+
+
+@login_required
+@admin_required
+def admin_configure_monitoring_view(request, user_id):
+    """
+    Allow admin to configure monitoring settings for a specific user's agents.
+    Now respects feature restrictions based on admin's subscription level.
+    """
+    target_user = get_object_or_404(CustomUser, pk=user_id, role=CustomUser.USER)
+    requesting_admin = request.user
+
+    # Authorization check
+    if not (requesting_admin.role == CustomUser.SUPERADMIN or target_user.company_admin == requesting_admin):
+        messages.error(request, "You are not authorized to configure monitoring for this user.")
+        return redirect('accounts:admin_dashboard')
+
+    # Check if admin has permission to configure monitoring
+    if requesting_admin.role == CustomUser.ADMIN:
+        feature_restrictions = AdminFeatureRestrictions.get_or_create_for_admin(requesting_admin)
+        if not feature_restrictions.can_configure_monitoring:
+            messages.error(request, "Monitoring configuration is not available on your current subscription plan.")
+            return redirect('accounts:admin_dashboard')
+    else:
+        # Superadmin has no restrictions
+        feature_restrictions = None
+
+    if request.method == 'POST':
+        form = AgentMonitoringConfigForm(request.POST)
+        if form.is_valid():
+            # Update all agents for this user, but respect feature restrictions
+            from monitor_app.models import Agent
+            user_agents = Agent.objects.filter(user=target_user)
+
+            if user_agents.exists():
+                update_fields = {}
+                
+                # Apply restrictions if this is an admin (not superadmin)
+                if feature_restrictions:
+                    update_fields['is_activity_monitoring_enabled'] = (
+                        form.cleaned_data['is_activity_monitoring_enabled'] and 
+                        feature_restrictions.can_use_activity_monitoring
+                    )
+                    update_fields['is_network_monitoring_enabled'] = (
+                        form.cleaned_data['is_network_monitoring_enabled'] and 
+                        feature_restrictions.can_use_network_monitoring
+                    )
+                  
+                    update_fields['is_live_streaming_enabled'] = (
+                        form.cleaned_data['is_live_streaming_enabled'] and 
+                        feature_restrictions.can_use_live_streaming
+                    )
+                    update_fields['is_video_recording_enabled'] = (
+                        form.cleaned_data['is_video_recording_enabled'] and 
+                        feature_restrictions.can_use_video_recording
+                    )
+                    update_fields['is_keystroke_logging_enabled'] = (
+                        form.cleaned_data['is_keystroke_logging_enabled'] and 
+                        feature_restrictions.can_use_keystroke_logging
+                    )
+                    update_fields['is_email_monitoring_enabled'] = (
+                        form.cleaned_data['is_email_monitoring_enabled'] and 
+                        feature_restrictions.can_use_email_monitoring
+                    )
+                else:
+                    # Superadmin has no restrictions
+                    update_fields = {
+                        'is_activity_monitoring_enabled': form.cleaned_data['is_activity_monitoring_enabled'],
+                        'is_network_monitoring_enabled': form.cleaned_data['is_network_monitoring_enabled'],
+                        'is_live_streaming_enabled': form.cleaned_data['is_live_streaming_enabled'],
+                        'is_video_recording_enabled': form.cleaned_data['is_video_recording_enabled'],
+                        'is_keystroke_logging_enabled': form.cleaned_data['is_keystroke_logging_enabled'],
+                        'is_email_monitoring_enabled': form.cleaned_data['is_email_monitoring_enabled'],
+                    }
+                
+                update_fields['capture_interval_seconds'] = form.cleaned_data['capture_interval_seconds']
+
+                user_agents.update(**update_fields)
+                messages.success(request, f"Monitoring configuration updated for {target_user.email} ({user_agents.count()} agents affected)")
+                
+                # Inform admin if some features were automatically disabled due to restrictions
+                if feature_restrictions:
+                    disabled_features = []
+                    if form.cleaned_data['is_live_streaming_enabled'] and not feature_restrictions.can_use_live_streaming:
+                        disabled_features.append("Live Streaming")
+                    if form.cleaned_data['is_video_recording_enabled'] and not feature_restrictions.can_use_video_recording:
+                        disabled_features.append("Video Recording")
+                    if form.cleaned_data['is_keystroke_logging_enabled'] and not feature_restrictions.can_use_keystroke_logging:
+                        disabled_features.append("Keystroke Logging")
+                    if form.cleaned_data['is_email_monitoring_enabled'] and not feature_restrictions.can_use_email_monitoring:
+                        disabled_features.append("Email Monitoring")
+                    
+                    if disabled_features:
+                        messages.warning(request, f"Note: {', '.join(disabled_features)} were not enabled due to subscription restrictions.")
+            else:
+                messages.info(request, f"No agents found for {target_user.email}. Settings will apply when agent is connected.")
+
+            return redirect('accounts:admin_dashboard')
+    else:
+        # Get current settings from user's first agent, or use defaults
+        from monitor_app.models import Agent
+        first_agent = Agent.objects.filter(user=target_user).first()
+
+        if first_agent:
+            initial_data = {
+                'is_activity_monitoring_enabled': first_agent.is_activity_monitoring_enabled,
+                'is_network_monitoring_enabled': first_agent.is_network_monitoring_enabled,
+                'is_live_streaming_enabled': first_agent.is_live_streaming_enabled,
+                'is_video_recording_enabled': getattr(first_agent, 'is_video_recording_enabled', False),
+                'is_keystroke_logging_enabled': getattr(first_agent, 'is_keystroke_logging_enabled', False),
+                'is_email_monitoring_enabled': getattr(first_agent, 'is_email_monitoring_enabled', False),
+                'capture_interval_seconds': first_agent.capture_interval_seconds,
+            }
+            form = AgentMonitoringConfigForm(initial=initial_data)
+        else:
+            form = AgentMonitoringConfigForm()
+
+    context = {
+        'form': form,
+        'target_user': target_user,
+        'feature_restrictions': feature_restrictions,
+        'title': f'Configure Monitoring for {target_user.get_full_name()}'
+    }
+
+    return render(request, 'accounts/configure_monitoring.html', context)
+
 
 @login_required
 def user_dashboard_view(request):
@@ -596,7 +999,7 @@ def user_dashboard_view(request):
     user = request.user
     if user.role != CustomUser.USER:
         return redirect('accounts:dashboard')
-    
+
     # In the template for this view, you can now link to the monitoring app dashboard
     # e.g., <a href="{% url 'monitor_app:dashboard' %}">View My Activity</a>
     context = { 'user': user }
@@ -631,7 +1034,7 @@ def admin_view_user_detail(request, user_id):
         'agent_ids_json': agent_ids_json,
         'is_single_user_view': True, # This is a CRITICAL flag for the included template
     }
-    
+
     # This now renders your new 'shell' template
     return render(request, 'accounts/admin_user_detail.html', context)
 
@@ -651,7 +1054,7 @@ def user_download_agent_view(request):
     # Generate a new token. The generate_agent_pairing_token() method
     # handles saving it to the user model.
     user.generate_agent_pairing_token()
-    
+
     context = {
         'title': "Download & Pair Agent",
         'pairing_token': user.agent_pairing_token,

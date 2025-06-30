@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -32,33 +33,74 @@
 </div>
 
 <div class="modal fade" id="streamModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-fullscreen">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Live Stream - <span id="modalAgentId"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-                <canvas id="streamCanvas" width="1280" height="720" style="max-width: 100%; max-height: 70vh; border: 1px solid #ddd;"></canvas>
-                <div id="streamStatus" class="mt-3">
-                    <span class="badge bg-warning">Connecting...</span>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="fullscreenBtn">
+                        <i class="fas fa-expand"></i> Fullscreen
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Close
+                    </button>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="fullscreenBtn">
-                    <i class="fas fa-expand"></i> Fullscreen
-                </button>
+            <div class="modal-body p-0 d-flex justify-content-center align-items-center bg-dark" style="min-height: 80vh;">
+                <div class="stream-container position-relative">
+                    <canvas id="streamCanvas" style="max-width: 100%; max-height: 80vh; display: block; border: 1px solid #333;"></canvas>
+                    <div id="streamStatus" class="position-absolute top-0 start-0 m-3">
+                        <span class="badge bg-warning">Connecting...</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.stream-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#streamCanvas {
+    object-fit: contain;
+    background-color: #000;
+}
+
+.modal-fullscreen .modal-body {
+    height: calc(100vh - 120px);
+}
+
+.fullscreen-canvas {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    z-index: 9999 !important;
+    background: #000 !important;
+    border: none !important;
+}
+
+.fullscreen-status {
+    position: fixed !important;
+    top: 20px !important;
+    left: 20px !important;
+    z-index: 10000 !important;
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const API_TOKEN = '{{ access_token }}';
     let activeStreams = new Map();
     let currentWebSocket = null;
+    let isFullscreen = false;
     
     function loadLiveStreams() {
         fetch('/monitor/api/live_streams/?live_only=true', {
@@ -144,9 +186,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const ctx = canvas.getContext('2d');
         const statusDiv = document.getElementById('streamStatus');
         
+        // Set initial canvas size
+        canvas.width = 1920;
+        canvas.height = 1080;
+        
         currentWebSocket.onopen = function() {
             console.log('WebSocket connected');
-            statusDiv.innerHTML = '<span class="badge bg-success">Connected</span>';
+            statusDiv.innerHTML = '<span class="badge bg-success"><i class="fas fa-circle"></i> Connected</span>';
         };
         
         currentWebSocket.onmessage = function(event) {
@@ -154,11 +200,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = JSON.parse(event.data);
                 if (data.type === 'video_frame' && data.frame_data) {
                     const frame = new Image();
+                    frame.crossOrigin = 'anonymous';
                     frame.src = `data:image/jpeg;base64,${data.frame_data}`;
                     frame.onload = function() {
-                        // Clear canvas and draw new frame
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
+                        // Clear canvas with black background
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Calculate aspect ratio and positioning
+                        const canvasAspect = canvas.width / canvas.height;
+                        const imageAspect = frame.width / frame.height;
+                        
+                        let drawWidth, drawHeight, drawX, drawY;
+                        
+                        if (imageAspect > canvasAspect) {
+                            // Image is wider than canvas
+                            drawWidth = canvas.width;
+                            drawHeight = canvas.width / imageAspect;
+                            drawX = 0;
+                            drawY = (canvas.height - drawHeight) / 2;
+                        } else {
+                            // Image is taller than canvas
+                            drawHeight = canvas.height;
+                            drawWidth = canvas.height * imageAspect;
+                            drawX = (canvas.width - drawWidth) / 2;
+                            drawY = 0;
+                        }
+                        
+                        // Draw the frame
+                        ctx.drawImage(frame, drawX, drawY, drawWidth, drawHeight);
                     };
                     frame.onerror = function() {
                         console.error('Failed to load video frame');
@@ -171,14 +241,66 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentWebSocket.onclose = function(event) {
             console.log('WebSocket closed:', event.code, event.reason);
-            statusDiv.innerHTML = '<span class="badge bg-danger">Disconnected</span>';
+            statusDiv.innerHTML = '<span class="badge bg-danger"><i class="fas fa-circle"></i> Disconnected</span>';
         };
         
         currentWebSocket.onerror = function(error) {
             console.error('WebSocket error:', error);
-            statusDiv.innerHTML = '<span class="badge bg-warning">Connection Error</span>';
+            statusDiv.innerHTML = '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle"></i> Connection Error</span>';
         };
     };
+
+    // Fullscreen functionality
+    document.getElementById('fullscreenBtn').addEventListener('click', function() {
+        const canvas = document.getElementById('streamCanvas');
+        const statusDiv = document.getElementById('streamStatus');
+        
+        if (!isFullscreen) {
+            // Enter fullscreen
+            canvas.classList.add('fullscreen-canvas');
+            statusDiv.classList.add('fullscreen-status');
+            document.body.style.overflow = 'hidden';
+            this.innerHTML = '<i class="fas fa-compress"></i> Exit Fullscreen';
+            isFullscreen = true;
+            
+            // Add escape key listener
+            document.addEventListener('keydown', handleEscapeKey);
+        } else {
+            exitFullscreen();
+        }
+    });
+    
+    function exitFullscreen() {
+        const canvas = document.getElementById('streamCanvas');
+        const statusDiv = document.getElementById('streamStatus');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        
+        canvas.classList.remove('fullscreen-canvas');
+        statusDiv.classList.remove('fullscreen-status');
+        document.body.style.overflow = '';
+        fullscreenBtn.innerHTML = '<i class="fas fa-expand"></i> Fullscreen';
+        isFullscreen = false;
+        
+        // Remove escape key listener
+        document.removeEventListener('keydown', handleEscapeKey);
+    }
+    
+    function handleEscapeKey(event) {
+        if (event.key === 'Escape' && isFullscreen) {
+            exitFullscreen();
+        }
+    }
+
+    // Handle modal close
+    document.getElementById('streamModal').addEventListener('hidden.bs.modal', function() {
+        if (currentWebSocket) {
+            currentWebSocket.close();
+            currentWebSocket = null;
+        }
+        if (isFullscreen) {
+            exitFullscreen();
+        }
+    });
 
     document.getElementById('refreshStreams').addEventListener('click', loadLiveStreams);
     
