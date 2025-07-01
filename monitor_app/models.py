@@ -58,7 +58,7 @@ class Agent(models.Model):
         null=True, # Allows agent to exist before being paired
         blank=True
     )
-    
+
     agent_id = models.CharField(max_length=255, unique=True, db_index=True)
     last_seen = models.DateTimeField(auto_now=True)
 
@@ -75,7 +75,23 @@ class Agent(models.Model):
     is_activity_monitoring_enabled = models.BooleanField(default=True)
     is_network_monitoring_enabled = models.BooleanField(default=True)
     is_live_streaming_enabled = models.BooleanField(default=False)  # Admin control for live streaming
-    
+    is_video_recording_enabled = models.BooleanField(
+        default=False,
+        help_text="Whether video recording is enabled for this agent"
+    )
+    is_screenshot_capturing_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether screenshot capturing is enabled for this agent"
+    )
+    is_keystroke_logging_enabled = models.BooleanField(
+        default=False,
+        help_text="Whether keystroke logging is enabled for this agent"
+    )
+    is_email_monitoring_enabled = models.BooleanField(
+        default=False,
+        help_text="Whether email monitoring is enabled for this agent"
+    )
+
     # Per-Agent Daily Schedule
     monday_active_start = models.TimeField(null=True, blank=True); monday_active_end = models.TimeField(null=True, blank=True)
     tuesday_active_start = models.TimeField(null=True, blank=True); tuesday_active_end = models.TimeField(null=True, blank=True)
@@ -138,10 +154,10 @@ class KeyLog(models.Model):
     """
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name='keylogs')
     timestamp = models.DateTimeField(auto_now_add=True)
-    
+
     source_app = models.CharField(max_length=255, help_text="The application or website where typing occurred.")
     key_sequence = models.TextField(help_text="The captured sequence of keystrokes.")
-    
+
     # This flag is set by the agent to categorize the log type.
     is_messaging_log = models.BooleanField(default=False)
 

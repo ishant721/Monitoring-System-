@@ -18,11 +18,12 @@ import traceback
 import threading
 import time
 from channels.generic.websocket import AsyncWebsocketConsumer
-
-# Import for handling database connections in long-running threads
+from django.utils.timezone import make_aware, now as timezone_now
+from channels.layers import get_channel_layer
+from asgiref.sync import sync_to_async as database_sync_to_async
 from django.db import close_old_connections
 
-from .models import EmailAccount, MonitoredEmail, EmailAttachment
+from .models import EmailAccount, MonitoredEmail, EmailAttachment, CompanyEmailConfig
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ async def fetch_and_process_with_uid(mail_connection, account, folder_name):
         try:
             if last_uid and uid <= last_uid: continue
             _, msg_data = mail_connection.uid('fetch', str(uid), '(RFC822)')
-            if msg_data and msg_data[0]: await process_and_save_email_db(msg_data[0][1], account.id)
+            if msg_data and msg_data[0]: await process_and_save_email_db(msg_data[0][1], account.id, folder_name)
             latest_uid_processed = max(latest_uid_processed or 0, uid)
         except Exception as e:
             logger.error(f"[Acc {account.id}] Failed to process UID {uid}: {e}")
@@ -211,47 +212,67 @@ def update_last_uid_db(account_id, uid, is_sent):
     account.save(update_fields=['last_sent_uid' if is_sent else 'last_inbox_uid'])
 
 @database_sync_to_async
-def process_and_save_email_db(raw_bytes, account_id):
+def process_and_save_email_db(raw_email_data, account_id, folder_name):
+    """Process and save a single email to the database."""
     try:
-        msg = email.message_from_bytes(raw_bytes)
-        msg_id = msg.get('Message-ID')
-        if not msg_id or MonitoredEmail.objects.filter(message_id=msg_id).exists(): return
+        msg = email.message_from_bytes(raw_email_data)
+        message_id = msg.get('Message-ID', '').strip()
 
-        account = EmailAccount.objects.get(pk=account_id)
+        if not message_id:
+            logger.warning(f"[Acc {account_id}] Skipping email without Message-ID")
+            return
+
+        # Check if email already exists
+        if MonitoredEmail.objects.filter(message_id=message_id).exists():
+            logger.info(f"[Acc {account_id}] Skipping duplicate email: {message_id}")
+            return
+
+        # Extract email data
+        subject = decode_mime_words(msg.get('Subject', ''))
         sender = decode_mime_words(msg.get('From', ''))
+        to_recipients = decode_mime_words(msg.get('To', ''))
+        cc_recipients = decode_mime_words(msg.get('Cc', ''))
+        bcc_recipients = decode_mime_words(msg.get('Bcc', ''))
 
-        direction = MonitoredEmail.Direction.OUTGOING if account.user.email.lower() in sender.lower() else MonitoredEmail.Direction.INCOMING
+        # Determine direction based on folder
+        is_sent = 'sent' in folder_name.lower()
+        direction = MonitoredEmail.Direction.OUTGOING if is_sent else MonitoredEmail.Direction.INCOMING
 
-        subject = decode_mime_words(msg.get('Subject', 'No Subject'))
-        recipients_to = decode_mime_words(msg.get('To', ''))
-        recipients_cc = decode_mime_words(msg.get('Cc', ''))
-        recipients_bcc = decode_mime_words(msg.get('Bcc', ''))
-        if direction == MonitoredEmail.Direction.OUTGOING and not recipients_to and not recipients_cc:
-             recipients_to = "(Undisclosed Recipients)"
+        # Parse date
+        try:
+            email_date = make_aware(email.utils.parsedate_to_datetime(msg.get('Date', '')))
+        except (TypeError, ValueError):
+            email_date = timezone_now()
 
-        try: date = make_aware(email.utils.parsedate_to_datetime(msg.get("Date")))
-        except: date = make_aware(datetime.now())
+        # Extract body and attachments
+        body, attachments = extract_body_and_attachments(msg)
 
-        body, attachments_data = extract_body_and_attachments(msg)
-
-        parent = None
-        if in_reply_to_header := msg.get('In-Reply-To'): parent = MonitoredEmail.objects.filter(message_id=in_reply_to_header).first()
-        if not parent and (references := msg.get('References')):
-            if ref_ids := references.split(): parent = MonitoredEmail.objects.filter(message_id__in=ref_ids).order_by('-date').first()
-
-        new_email = MonitoredEmail.objects.create(
-            account=account, message_id=msg_id, direction=direction, sender=sender,
-            recipients_to=recipients_to, recipients_cc=recipients_cc, recipients_bcc=recipients_bcc,
-            subject=subject, body=body, date=date, has_attachments=bool(attachments_data),
-            parent=parent, in_reply_to_header=in_reply_to_header
+        # Create email record
+        monitored_email = MonitoredEmail.objects.create(
+            account_id=account_id,
+            message_id=message_id,
+            direction=direction,
+            sender=sender,
+            recipients_to=to_recipients,
+            recipients_cc=cc_recipients,
+            recipients_bcc=bcc_recipients,
+            subject=subject,
+            body=body,
+            date=email_date,
+            has_attachments=bool(attachments)
         )
-        for attachment_data in attachments_data:
-            EmailAttachment.objects.create(email=new_email, **attachment_data)
 
-        logger.info(f"  > [DB Save] SUCCESS | Dir: {new_email.get_direction_display()} | Sub: '{subject}'")
+        # Save attachments if any
+        for attachment_data in attachments:
+            EmailAttachment.objects.create(
+                email=monitored_email,
+                **attachment_data
+            )
+
+        logger.info(f"[Acc {account_id}] Saved {direction} email: {subject}")
 
     except Exception as e:
-        logger.error(f"CRITICAL ERROR in process_and_save_email_db: {e}\n{traceback.format_exc()}")
+        logger.error(f"[Acc {account_id}] Error processing email: {e}")
 
 async def find_sent_folder(mail_connection):
     """

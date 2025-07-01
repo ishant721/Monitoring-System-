@@ -204,11 +204,19 @@ def user_setup_app_password(request):
                 account.save()
                 
                 # Start the listener
-                channel_layer = get_channel_layer()
-                async_to_sync(channel_layer.send)(
-                    "email-listener",
-                    {"type": "start.listening", "account_id": account.id},
-                )
+                try:
+                    channel_layer = get_channel_layer()
+                    if channel_layer:
+                        async_to_sync(channel_layer.send)(
+                            "email-listener",
+                            {"type": "start.listening", "account_id": account.id},
+                        )
+                        logger.info(f"Email listener start signal sent for account {account.id}")
+                    else:
+                        logger.warning("Channel layer not available - email listener may not start automatically")
+                except Exception as e:
+                    logger.error(f"Failed to send email listener start signal: {e}")
+                
                 messages.success(request, "Authentication successful! Your email monitoring is now active.")
                 # Redirect to the same page, which will now show the "Already Authenticated" view.
                 return redirect('mail_monitor:user_setup')

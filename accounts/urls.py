@@ -49,5 +49,6 @@ urlpatterns = [
     path('superadmin/activate-admin/<int:admin_id>/', views.superadmin_activate_admin_view, name='superadmin_activate_admin'),
     path('superadmin/extend-trial/<int:admin_id>/', views.superadmin_extend_trial_view, name='superadmin_extend_trial'),
     path('admin/configure-monitoring/<int:user_id>/', views.admin_configure_monitoring_view, name='admin_configure_monitoring'),
+    path('admin/bulk-configure-monitoring/', views.admin_bulk_configure_monitoring_view, name='admin_bulk_configure_monitoring'),
     path('admin/manage-features/<int:admin_id>/', views.superadmin_manage_feature_restrictions_view, name='superadmin_manage_feature_restrictions'),
 ]

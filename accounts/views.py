@@ -1,19 +1,16 @@
 # accounts/views.py
-import json # <--- ADD THIS LINE
+import json
 import traceback
 from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib import messages
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import timedelta 
 import logging
 
-
 logger = logging.getLogger(__name__)
-
 
 from .forms import (
     CustomUserCreationForm, CustomAuthenticationForm, OTPVerificationForm,
@@ -34,18 +31,12 @@ from .utils import (
     send_trial_extension_request_to_superadmins_email,
     send_admin_trial_extension_status_email
 )
-from .decorators import otp_session_required, superadmin_required, admin_required
-
+from .decorators import otp_session_required, superadmin_required, admin_required, user_required
 from monitor_app.models import Agent
 
-from django.contrib.auth.decorators import login_required
-from .decorators import user_required
-
-from channels.layers import get_channel_layer # <-- ADD THIS
-from asgiref.sync import async_to_sync       # <-- ADD THIS
-from mail_monitor.models import EmailAccount  # <-- ADD THIS
-
-from mail_monitor.models import CompanyEmailConfig
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from mail_monitor.models import EmailAccount, CompanyEmailConfig
 
 # --- Authentication Lifecycle Views (All UNCHANGED) ---
 
@@ -989,6 +980,100 @@ def admin_configure_monitoring_view(request, user_id):
 
     return render(request, 'accounts/configure_monitoring.html', context)
 
+
+@login_required
+@admin_required
+def admin_bulk_configure_monitoring_view(request):
+    """
+    Allow admin to configure monitoring settings for ALL users under their company at once.
+    """
+    requesting_admin = request.user
+
+    if requesting_admin.role != CustomUser.ADMIN:
+        messages.error(request, "Only admins can access bulk configuration.")
+        return redirect('accounts:admin_dashboard')
+
+    # Check if admin has permission to configure monitoring
+    feature_restrictions = AdminFeatureRestrictions.get_or_create_for_admin(requesting_admin)
+    if not feature_restrictions.can_configure_monitoring:
+        messages.error(request, "Monitoring configuration is not available on your current subscription plan.")
+        return redirect('accounts:admin_dashboard')
+
+    # Get all users under this admin
+    company_users = CustomUser.objects.filter(company_admin=requesting_admin, role=CustomUser.USER)
+
+    if request.method == 'POST':
+        form = AgentMonitoringConfigForm(request.POST)
+        if form.is_valid():
+            # Update all agents for all users under this admin
+            from monitor_app.models import Agent
+            
+            update_fields = {}
+            
+            # Apply restrictions based on admin's subscription
+            update_fields['is_activity_monitoring_enabled'] = (
+                form.cleaned_data['is_activity_monitoring_enabled'] and 
+                feature_restrictions.can_use_activity_monitoring
+            )
+            update_fields['is_network_monitoring_enabled'] = (
+                form.cleaned_data['is_network_monitoring_enabled'] and 
+                feature_restrictions.can_use_network_monitoring
+            )
+            update_fields['is_screenshot_capturing_enabled'] = (
+                form.cleaned_data['is_screenshot_capturing_enabled'] and 
+                feature_restrictions.can_use_screenshot_capturing
+            )
+            update_fields['is_live_streaming_enabled'] = (
+                form.cleaned_data['is_live_streaming_enabled'] and 
+                feature_restrictions.can_use_live_streaming
+            )
+            update_fields['is_video_recording_enabled'] = (
+                form.cleaned_data['is_video_recording_enabled'] and 
+                feature_restrictions.can_use_video_recording
+            )
+            update_fields['is_keystroke_logging_enabled'] = (
+                form.cleaned_data['is_keystroke_logging_enabled'] and 
+                feature_restrictions.can_use_keystroke_logging
+            )
+            update_fields['is_email_monitoring_enabled'] = (
+                form.cleaned_data['is_email_monitoring_enabled'] and 
+                feature_restrictions.can_use_email_monitoring
+            )
+            update_fields['capture_interval_seconds'] = form.cleaned_data['capture_interval_seconds']
+
+            # Apply to all agents of all users under this admin
+            all_company_agents = Agent.objects.filter(user__in=company_users)
+            updated_count = all_company_agents.update(**update_fields)
+
+            messages.success(request, f"Monitoring configuration applied to all company users ({updated_count} agents affected)")
+            
+            # Inform admin if some features were automatically disabled due to restrictions
+            disabled_features = []
+            if form.cleaned_data['is_live_streaming_enabled'] and not feature_restrictions.can_use_live_streaming:
+                disabled_features.append("Live Streaming")
+            if form.cleaned_data['is_video_recording_enabled'] and not feature_restrictions.can_use_video_recording:
+                disabled_features.append("Video Recording")
+            if form.cleaned_data['is_keystroke_logging_enabled'] and not feature_restrictions.can_use_keystroke_logging:
+                disabled_features.append("Keystroke Logging")
+            if form.cleaned_data['is_email_monitoring_enabled'] and not feature_restrictions.can_use_email_monitoring:
+                disabled_features.append("Email Monitoring")
+            
+            if disabled_features:
+                messages.warning(request, f"Note: {', '.join(disabled_features)} were not enabled due to subscription restrictions.")
+
+            return redirect('accounts:admin_dashboard')
+    else:
+        # Use default form values
+        form = AgentMonitoringConfigForm()
+
+    context = {
+        'form': form,
+        'feature_restrictions': feature_restrictions,
+        'company_users': company_users,
+        'title': 'Bulk Configure Monitoring for All Company Users'
+    }
+
+    return render(request, 'accounts/bulk_configure_monitoring.html', context)
 
 @login_required
 def user_dashboard_view(request):

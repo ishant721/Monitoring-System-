@@ -61,11 +61,11 @@
                     <thead>
                         <tr>
                             {% if request.user.is_superadmin %}<th>User</th>{% endif %}
-                            
+
                             {# --- NEW COLUMN ADDED HERE --- #}
                             <th>Direction</th>
-
                             <th>Subject</th>
+                            <th>User</th>
                             <th>From / To</th>
                             <th>Date</th>
                             <th class="text-center">Attachments</th>
@@ -78,22 +78,32 @@
                             {% if request.user.is_superadmin %}
                                 <td>{{ email.account.user.username }}</td>
                             {% endif %}
-                            
+
                             {# --- DATA FOR THE NEW COLUMN --- #}
                             <td>
-                                {% if email.direction == email.Direction.INCOMING %}
-                                    <span class="badge direction-incoming"><i class="fas fa-arrow-down me-1"></i>Incoming</span>
+                                {% if email.direction == 'INCOMING' %}
+                                    <span class="badge bg-primary">
+                                        <i class="fas fa-arrow-down me-1"></i>
+                                        {{ email.get_direction_display }}
+                                    </span>
                                 {% else %}
-                                    <span class="badge direction-outgoing"><i class="fas fa-arrow-up me-1"></i>Outgoing</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-arrow-up me-1"></i>
+                                        {{ email.get_direction_display }}
+                                    </span>
                                 {% endif %}
                             </td>
-
-                            <td>{{ email.subject|truncatechars:50 }}</td>
                             <td>
-                                {% if email.direction == email.Direction.INCOMING %}
-                                    <span class="text-muted">From:</span> {{ email.sender|truncatechars:40 }}
+                                <strong>{{ email.subject|truncatechars:50 }}</strong>
+                            </td>
+                            <td>
+                                <small class="text-primary">{{ email.account.user.get_full_name }}</small>
+                            </td>
+                            <td>
+                                {% if email.direction == 'INCOMING' %}
+                                    <small class="text-muted">From:</small> {{ email.sender|truncatechars:25 }}
                                 {% else %}
-                                    <span class="text-muted">To:</span> {{ email.recipients_to|truncatechars:40 }}
+                                    <small class="text-muted">To:</small> {{ email.recipients_to|truncatechars:25 }}
                                 {% endif %}
                             </td>
                             <td data-sort="{{ email.date.timestamp }}">{{ email.date|date:"Y-m-d H:i" }}</td>

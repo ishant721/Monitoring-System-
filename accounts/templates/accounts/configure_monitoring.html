@@ -67,7 +67,24 @@
                                     </div>
                                 </div>
                             </div>
-                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        {% if not feature_restrictions or feature_restrictions.can_use_screenshot_capturing %}
+                                            {{ form.is_screenshot_capturing_enabled }}
+                                        {% else %}
+                                            <input type="checkbox" class="form-check-input" disabled>
+                                            <input type="hidden" name="{{ form.is_screenshot_capturing_enabled.name }}" value="false">
+                                        {% endif %}
+                                        <label class="form-check-label" for="{{ form.is_screenshot_capturing_enabled.id_for_label }}">
+                                            {{ form.is_screenshot_capturing_enabled.label }}
+                                            {% if feature_restrictions and not feature_restrictions.can_use_screenshot_capturing %}
+                                                <span class="badge bg-warning text-dark ms-2">Restricted</span>
+                                            {% endif %}
+                                        </label>
+                                        <div class="form-text">{{ form.is_screenshot_capturing_enabled.help_text }}</div>
+                                    </div>
+                                </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="{{ form.capture_interval_seconds.id_for_label }}" class="form-label">
