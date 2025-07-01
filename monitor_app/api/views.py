@@ -34,12 +34,27 @@ def get_config_api(request):
     """
     Called by agents to get their configuration.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     # Get agent_id from request headers (set by authentication)
     agent_id = getattr(request, 'agent_id', None)
+    logger.info(f"Config request - Agent ID: {agent_id}")
+    logger.info(f"Request headers: {dict(request.META)}")
+    
     if not agent_id:
-        return Response({"error": "Agent ID not found in request"}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error("Missing X-AGENT-ID header in config request")
+        return Response({
+            "error": "Agent ID header (X-AGENT-ID) is required",
+            "received_headers": {k: v for k, v in request.META.items() if k.startswith('HTTP_')}
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    agent = get_object_or_404(Agent, agent_id=agent_id)
+    try:
+        agent = Agent.objects.get(agent_id=agent_id)
+        logger.info(f"Found agent: {agent}")
+    except Agent.DoesNotExist:
+        logger.error(f"Agent not found: {agent_id}")
+        return Response({"error": f"Agent {agent_id} not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # FIX: Perform schedule formatting directly in the view
     def format_time(t): return t.strftime('%H:%M') if t else None
@@ -52,6 +67,7 @@ def get_config_api(request):
         "activity_monitoring_enabled": agent.is_activity_monitoring_enabled,
         "network_monitoring_enabled": agent.is_network_monitoring_enabled,
         "live_streaming_enabled": agent.is_live_streaming_enabled,
+        "keystroke_logging_enabled": agent.is_keystroke_logging_enabled,
         "schedule": schedule,
     }
     return Response(config)
@@ -209,6 +225,7 @@ def agent_status_api_view(request):
             "is_activity_monitoring_enabled": agent.is_activity_monitoring_enabled,
             "is_network_monitoring_enabled": agent.is_network_monitoring_enabled,
             "is_live_streaming_enabled": agent.is_live_streaming_enabled,
+            "is_keystroke_logging_enabled": agent.is_keystroke_logging_enabled,
             "upload_bytes": agent.latest_upload_bytes if agent.latest_upload_bytes is not None else 0,
             "download_bytes": agent.latest_download_bytes if agent.latest_download_bytes is not None else 0,
             "network_type": agent.latest_network_type or "N/A",

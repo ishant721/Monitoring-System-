@@ -413,6 +413,32 @@ class AgentMonitoringConfigForm(forms.Form):
         label="Screenshot Interval (seconds)",
         help_text="How often to capture screenshots (5-300 seconds)"
     )
+    
+    # Premium features (disabled by default)
+    is_live_streaming_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Live Streaming",
+        help_text="Enable real-time screen streaming (Premium feature)"
+    )
+    is_video_recording_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Video Recording",
+        help_text="Enable screen recording functionality (Premium feature)"
+    )
+    is_keystroke_logging_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Keystroke Logging",
+        help_text="Capture detailed keystroke logs (Premium feature - use responsibly)"
+    )
+    is_email_monitoring_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Email Monitoring",
+        help_text="Monitor email activity (Premium feature)"
+    )
 
     # Optional features (disabled by default)
     is_live_streaming_enabled = forms.BooleanField(

