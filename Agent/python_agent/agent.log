@@ -334,3 +334,1374 @@
 2025-07-05 14:53:55,598 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
 2025-07-05 14:54:08,125 - WARNING - WebSocket not connected. Cannot send heartbeat.
 2025-07-05 14:54:18,581 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:54:29,046 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:54:39,494 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:54:50,037 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:55:00,766 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:55:11,432 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:55:22,074 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:55:32,787 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:55:43,387 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:55:54,005 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:56:04,586 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:56:15,151 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:56:25,592 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:56:36,031 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:56:46,610 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:56:57,181 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:57:07,744 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:57:18,372 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:57:28,933 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:57:39,395 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:57:49,808 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:57:51,988 - INFO - Agent stopped by user
+2025-07-05 14:57:51,988 - INFO - Agent process terminated
+2025-07-05 14:57:53,817 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:57:53,829 - INFO - Fetching initial configuration from server...
+2025-07-05 14:57:53,829 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 14:57:53,836 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:58:57,966 - INFO - Agent stopped by user
+2025-07-05 14:58:57,968 - INFO - Agent process terminated
+2025-07-05 14:58:59,911 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:58:59,925 - INFO - Fetching initial configuration from server...
+2025-07-05 14:58:59,925 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 14:58:59,930 - ERROR - Error fetching config: 401 - {"detail":"Given token not valid for any token type","code":"token_not_valid","messages":[{"token_class":"AccessToken","token_type":"access","message":"Token is invalid"}]}
+2025-07-05 15:00:35,977 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:00:46,573 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:00:57,010 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:01:06,262 - INFO - Agent stopped by user
+2025-07-05 15:01:06,263 - INFO - Agent process terminated
+2025-07-05 15:01:08,372 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:01:08,385 - INFO - Fetching initial configuration from server...
+2025-07-05 15:01:08,385 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:01:08,401 - ERROR - Error fetching config: 401 - {"detail":"Given token not valid for any token type","code":"token_not_valid","messages":[{"token_class":"AccessToken","token_type":"access","message":"Token is invalid"}]}
+2025-07-05 15:02:03,973 - INFO - Agent stopped by user
+2025-07-05 15:02:03,974 - INFO - Agent process terminated
+2025-07-05 15:02:06,132 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:02:06,143 - INFO - Fetching initial configuration from server...
+2025-07-05 15:02:06,143 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/agents/config/
+2025-07-05 15:02:06,152 - ERROR - Error fetching config: 404 - <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <title>Page not found at /monitor/api/agents/config/</title>
+  <meta name="robots" content="NONE,NOARCHIVE">
+  <style>
+    html * { padding:0; margin:0; }
+    body * { padding:10px 20px; }
+    body * * { padding:0; }
+    body { font-family: sans-serif; background:#eee; color:#000; }
+    body > :where(header, main, footer) { border-bottom:1px solid #ddd; }
+    h1 { font-weight:normal; margin-bottom:.4em; }
+    h1 small { font-size:60%; color:#666; font-weight:normal; }
+    table { border:none; border-collapse: collapse; width:100%; }
+    td, th { vertical-align:top; padding:2px 3px; }
+    th { width:12em; text-align:right; color:#666; padding-right:.5em; }
+    #info { background:#f6f6f6; }
+    #info ol { margin: 0.5em 4em; }
+    #info ol li { font-family: monospace; }
+    #summary { background: #ffc; }
+    #explanation { background:#eee; border-bottom: 0px none; }
+    pre.exception_value { font-family: sans-serif; color: #575757; font-size: 1.5em; margin: 10px 0 10px 0; }
+  </style>
+</head>
+<body>
+  <header id="summary">
+    <h1>Page not found <small>(404)</small></h1>
+    
+    <table class="meta">
+      <tr>
+        <th scope="row">Request Method:</th>
+        <td>GET</td>
+      </tr>
+      <tr>
+        <th scope="row">Request URL:</th>
+        <td>http://127.0.0.1:8000/monitor/api/agents/config/</td>
+      </tr>
+      
+    </table>
+  </header>
+
+  <main id="info">
+    
+      <p>
+      Using the URLconf defined in <code>hierarchical_auth.urls</code>,
+      Django tried these URL patterns, in this order:
+      </p>
+      <ol>
+        
+          <li>
+            
+              <code>
+                
+                [name='home']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                admin/
+                
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                accounts/
+                
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                
+                [name='dashboard']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                keylogger/
+                [name='keylogger_dashboard']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                live_stream/
+                [name='live_stream']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                live_streams/
+                [name='live_streams_api']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                toggle_live_streaming/&lt;str:agent_id&gt;/
+                [name='toggle_live_streaming']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agent/&lt;str:agent_id&gt;/toggle_live_streaming/
+                [name='toggle_live_streaming_api_alt']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                test-auth/
+                [name='test_auth']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                heartbeat/
+                [name='receive_heartbeat']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                config/
+                [name='get_agent_config']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                upload_recording/
+                [name='upload_recording']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                keylog/
+                [name='receive_keylog']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                break_schedules/
+                [name='get_break_schedules']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agents/status/
+                [name='agent_status']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agent-status/
+                [name='agent_status_alias']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agents/&lt;str:agent_id&gt;/config/
+                [name='update_agent_config']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agent/&lt;str:agent_id&gt;/update-config/
+                [name='update_agent_config_alt']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agents/&lt;str:agent_id&gt;/control/&lt;str:action&gt;/
+                [name='agent_control']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agents/broadcast_config/
+                [name='broadcast_config']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                data/history/
+                [name='agent_data_history']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                agents/history/
+                [name='agent_history_alias']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                keylog/history/
+                [name='keylog_history']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                keylogs/
+                [name='keylog_history_alias']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                recordings/videos/
+                [name='recorded_videos']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                videos/
+                [name='recorded_videos_alias']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                monitor/
+                
+              </code>
+            
+              <code>
+                api/
+                
+              </code>
+            
+              <code>
+                live_stream_status/
+                [name='live_stream_status_api']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                api/
+                
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                mail/
+                
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                api/token/
+                [name='token_obtain_pair']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                api/token/refresh/
+                [name='token_refresh']
+              </code>
+            
+          </li>
+        
+          <li>
+            
+              <code>
+                ^media/(?P&lt;path&gt;.*)$
+                
+              </code>
+            
+          </li>
+        
+      </ol>
+      <p>
+        
+          The current path, <code>monitor/api/agents/config/</code>,
+        
+        didn’t match any of these.
+      </p>
+    
+  </main>
+
+  <footer id="explanation">
+    <p>
+      You’re seeing this error because you have <code>DEBUG = True</code> in
+      your Django settings file. Change that to <code>False</code>, and Django
+      will display a standard 404 page.
+    </p>
+  </footer>
+</body>
+</html>
+
+2025-07-05 15:03:24,902 - INFO - Agent stopped by user
+2025-07-05 15:03:24,904 - INFO - Agent process terminated
+2025-07-05 15:03:27,147 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:03:27,157 - INFO - Fetching initial configuration from server...
+2025-07-05 15:03:27,157 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:03:27,162 - ERROR - Error fetching config: 401 - {"detail":"Given token not valid for any token type","code":"token_not_valid","messages":[{"token_class":"AccessToken","token_type":"access","message":"Token is invalid"}]}
+2025-07-05 15:04:51,954 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:04:54,779 - INFO - Agent stopped by user
+2025-07-05 15:04:54,779 - INFO - Agent process terminated
+2025-07-05 15:04:56,943 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:04:56,953 - INFO - Fetching initial configuration from server...
+2025-07-05 15:04:56,953 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:04:56,961 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:06:00,583 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:06:03,162 - INFO - Agent stopped by user
+2025-07-05 15:06:03,163 - INFO - Agent process terminated
+2025-07-05 15:06:09,367 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:06:09,378 - INFO - Fetching initial configuration from server...
+2025-07-05 15:06:09,378 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:06:09,384 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:07:44,956 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:07:55,574 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:08:05,973 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:08:10,755 - INFO - Agent stopped by user
+2025-07-05 15:08:10,756 - INFO - Agent process terminated
+2025-07-05 15:08:12,323 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:08:12,332 - INFO - Fetching initial configuration from server...
+2025-07-05 15:08:12,333 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:08:12,338 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:08:12,757 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:08:23,176 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:08:33,581 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:08:44,007 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:08:54,425 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:09:04,876 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:09:15,301 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:09:25,725 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:09:36,122 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:09:43,208 - INFO - Agent stopped by user
+2025-07-05 15:09:43,208 - INFO - Agent process terminated
+2025-07-05 15:09:44,401 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:09:44,415 - INFO - Fetching initial configuration from server...
+2025-07-05 15:09:44,415 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:09:44,422 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:09:44,930 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:09:55,357 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:10:05,809 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:10:16,253 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:10:20,193 - INFO - Agent stopped by user
+2025-07-05 15:10:20,193 - INFO - Agent process terminated
+2025-07-05 15:10:21,889 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:10:21,900 - INFO - Fetching initial configuration from server...
+2025-07-05 15:10:21,900 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:10:21,908 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:11:04,131 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:11:14,573 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:11:25,011 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:11:32,322 - INFO - Agent stopped by user
+2025-07-05 15:11:32,323 - INFO - Agent process terminated
+2025-07-05 15:11:36,782 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:11:36,792 - INFO - Fetching initial configuration from server...
+2025-07-05 15:11:36,792 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:11:36,804 - INFO - Config fetched successfully
+2025-07-05 15:11:36,804 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:11:36,804 - INFO - No company break schedules configured
+2025-07-05 15:11:36,804 - INFO - No user-specific break schedules configured
+2025-07-05 15:11:36,804 - INFO - User is not on leave
+2025-07-05 15:11:36,804 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:11:37,252 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:11:47,798 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:11:58,245 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:12:08,666 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:12:12,660 - INFO - Agent stopped by user
+2025-07-05 15:12:12,661 - INFO - Agent process terminated
+2025-07-05 15:12:14,819 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:12:14,830 - INFO - Fetching initial configuration from server...
+2025-07-05 15:12:14,830 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:12:14,838 - INFO - Config fetched successfully
+2025-07-05 15:12:14,839 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:12:14,839 - INFO - No company break schedules configured
+2025-07-05 15:12:14,839 - INFO - No user-specific break schedules configured
+2025-07-05 15:12:14,839 - INFO - User is not on leave
+2025-07-05 15:12:14,839 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:12:15,261 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:12:25,692 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:12:36,228 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:12:46,902 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:12:57,539 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:13:08,112 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:13:18,702 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:13:29,314 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:13:39,920 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:13:50,534 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:14:01,156 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:14:11,764 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:14:22,393 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:14:32,997 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:14:43,595 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:14:54,198 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:15:04,756 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:15:15,200 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 15:15:15,914 - INFO - Agent stopped by user
+2025-07-05 15:15:15,914 - INFO - Agent process terminated
+2025-07-05 15:15:17,879 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:15:17,891 - INFO - Fetching initial configuration from server...
+2025-07-05 15:15:17,892 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:15:17,901 - INFO - Config fetched successfully
+2025-07-05 15:15:17,901 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:15:17,901 - INFO - No company break schedules configured
+2025-07-05 15:15:17,901 - INFO - No user-specific break schedules configured
+2025-07-05 15:15:17,901 - INFO - User is not on leave
+2025-07-05 15:15:17,901 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:15:17,901 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:15:32,910 - INFO - Fetching initial configuration from server...
+2025-07-05 15:15:32,912 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:15:32,927 - INFO - Config fetched successfully
+2025-07-05 15:15:32,927 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:15:32,927 - INFO - No company break schedules configured
+2025-07-05 15:15:32,927 - INFO - No user-specific break schedules configured
+2025-07-05 15:15:32,927 - INFO - User is not on leave
+2025-07-05 15:15:32,927 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:15:32,927 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:15:47,940 - INFO - Fetching initial configuration from server...
+2025-07-05 15:15:47,941 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:15:47,956 - INFO - Config fetched successfully
+2025-07-05 15:15:47,956 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:15:47,957 - INFO - No company break schedules configured
+2025-07-05 15:15:47,957 - INFO - No user-specific break schedules configured
+2025-07-05 15:15:47,957 - INFO - User is not on leave
+2025-07-05 15:15:47,957 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:15:47,957 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:16:02,964 - INFO - Fetching initial configuration from server...
+2025-07-05 15:16:02,965 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:16:02,981 - INFO - Config fetched successfully
+2025-07-05 15:16:02,981 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:02,981 - INFO - No company break schedules configured
+2025-07-05 15:16:02,981 - INFO - No user-specific break schedules configured
+2025-07-05 15:16:02,981 - INFO - User is not on leave
+2025-07-05 15:16:02,981 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:02,981 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:16:17,991 - INFO - Fetching initial configuration from server...
+2025-07-05 15:16:17,991 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:16:17,998 - INFO - Config fetched successfully
+2025-07-05 15:16:17,998 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:17,998 - INFO - No company break schedules configured
+2025-07-05 15:16:17,998 - INFO - No user-specific break schedules configured
+2025-07-05 15:16:17,998 - INFO - User is not on leave
+2025-07-05 15:16:17,998 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:17,999 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:16:18,690 - INFO - Agent stopped by user
+2025-07-05 15:16:18,691 - INFO - Agent process terminated
+2025-07-05 15:16:20,497 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:16:20,509 - INFO - Fetching initial configuration from server...
+2025-07-05 15:16:20,509 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:16:20,516 - INFO - Config fetched successfully
+2025-07-05 15:16:20,516 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:20,516 - INFO - No company break schedules configured
+2025-07-05 15:16:20,516 - INFO - No user-specific break schedules configured
+2025-07-05 15:16:20,516 - INFO - User is not on leave
+2025-07-05 15:16:20,516 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:20,517 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:16:28,683 - INFO - Agent stopped by user
+2025-07-05 15:16:28,684 - INFO - Agent process terminated
+2025-07-05 15:16:30,019 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:16:30,030 - INFO - Fetching initial configuration from server...
+2025-07-05 15:16:30,030 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:16:30,038 - INFO - Config fetched successfully
+2025-07-05 15:16:30,038 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:30,038 - INFO - No company break schedules configured
+2025-07-05 15:16:30,038 - INFO - No user-specific break schedules configured
+2025-07-05 15:16:30,038 - INFO - User is not on leave
+2025-07-05 15:16:30,038 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:30,038 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:16:45,044 - INFO - Fetching initial configuration from server...
+2025-07-05 15:16:45,045 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:16:45,055 - INFO - Config fetched successfully
+2025-07-05 15:16:45,055 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:45,055 - INFO - No company break schedules configured
+2025-07-05 15:16:45,055 - INFO - No user-specific break schedules configured
+2025-07-05 15:16:45,055 - INFO - User is not on leave
+2025-07-05 15:16:45,055 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:16:45,056 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:17:00,065 - INFO - Fetching initial configuration from server...
+2025-07-05 15:17:00,065 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:17:00,079 - INFO - Config fetched successfully
+2025-07-05 15:17:00,079 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:17:00,079 - INFO - No company break schedules configured
+2025-07-05 15:17:00,079 - INFO - No user-specific break schedules configured
+2025-07-05 15:17:00,079 - INFO - User is not on leave
+2025-07-05 15:17:00,079 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:17:00,080 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:19:48,042 - INFO - Fetching initial configuration from server...
+2025-07-05 15:19:48,043 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:19:48,058 - INFO - Config fetched successfully
+2025-07-05 15:19:48,060 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:19:48,061 - INFO - No company break schedules configured
+2025-07-05 15:19:48,061 - INFO - No user-specific break schedules configured
+2025-07-05 15:19:48,061 - INFO - User is not on leave
+2025-07-05 15:19:48,061 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:19:48,062 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:20:03,076 - INFO - Fetching initial configuration from server...
+2025-07-05 15:20:03,077 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:20:03,094 - INFO - Config fetched successfully
+2025-07-05 15:20:03,094 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:03,095 - INFO - No company break schedules configured
+2025-07-05 15:20:03,095 - INFO - No user-specific break schedules configured
+2025-07-05 15:20:03,095 - INFO - User is not on leave
+2025-07-05 15:20:03,095 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:03,095 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:20:18,121 - INFO - Fetching initial configuration from server...
+2025-07-05 15:20:18,122 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:20:18,136 - INFO - Config fetched successfully
+2025-07-05 15:20:18,136 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:18,136 - INFO - No company break schedules configured
+2025-07-05 15:20:18,137 - INFO - No user-specific break schedules configured
+2025-07-05 15:20:18,137 - INFO - User is not on leave
+2025-07-05 15:20:18,137 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:18,138 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:20:33,149 - INFO - Fetching initial configuration from server...
+2025-07-05 15:20:33,150 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:20:33,165 - INFO - Config fetched successfully
+2025-07-05 15:20:33,165 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:33,166 - INFO - No company break schedules configured
+2025-07-05 15:20:33,166 - INFO - No user-specific break schedules configured
+2025-07-05 15:20:33,166 - INFO - User is not on leave
+2025-07-05 15:20:33,166 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:33,167 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:20:48,178 - INFO - Fetching initial configuration from server...
+2025-07-05 15:20:48,179 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:20:48,195 - INFO - Config fetched successfully
+2025-07-05 15:20:48,195 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:48,195 - INFO - No company break schedules configured
+2025-07-05 15:20:48,195 - INFO - No user-specific break schedules configured
+2025-07-05 15:20:48,195 - INFO - User is not on leave
+2025-07-05 15:20:48,195 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:20:48,196 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:21:03,212 - INFO - Fetching initial configuration from server...
+2025-07-05 15:21:03,213 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:21:03,233 - INFO - Config fetched successfully
+2025-07-05 15:21:03,233 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:03,233 - INFO - No company break schedules configured
+2025-07-05 15:21:03,233 - INFO - No user-specific break schedules configured
+2025-07-05 15:21:03,233 - INFO - User is not on leave
+2025-07-05 15:21:03,233 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:03,234 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:21:18,243 - INFO - Fetching initial configuration from server...
+2025-07-05 15:21:18,245 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:21:18,257 - INFO - Config fetched successfully
+2025-07-05 15:21:18,257 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:18,257 - INFO - No company break schedules configured
+2025-07-05 15:21:18,257 - INFO - No user-specific break schedules configured
+2025-07-05 15:21:18,257 - INFO - User is not on leave
+2025-07-05 15:21:18,257 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:18,257 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:21:33,276 - INFO - Fetching initial configuration from server...
+2025-07-05 15:21:33,277 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:21:33,305 - INFO - Config fetched successfully
+2025-07-05 15:21:33,305 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:33,306 - INFO - No company break schedules configured
+2025-07-05 15:21:33,306 - INFO - No user-specific break schedules configured
+2025-07-05 15:21:33,306 - INFO - User is not on leave
+2025-07-05 15:21:33,306 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:33,307 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:21:48,367 - INFO - Fetching initial configuration from server...
+2025-07-05 15:21:48,371 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:21:48,388 - INFO - Config fetched successfully
+2025-07-05 15:21:48,388 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:48,388 - INFO - No company break schedules configured
+2025-07-05 15:21:48,389 - INFO - No user-specific break schedules configured
+2025-07-05 15:21:48,389 - INFO - User is not on leave
+2025-07-05 15:21:48,389 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:21:48,389 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:22:03,409 - INFO - Fetching initial configuration from server...
+2025-07-05 15:22:03,410 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:22:03,429 - INFO - Config fetched successfully
+2025-07-05 15:22:03,429 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:22:03,430 - INFO - No company break schedules configured
+2025-07-05 15:22:03,430 - INFO - No user-specific break schedules configured
+2025-07-05 15:22:03,430 - INFO - User is not on leave
+2025-07-05 15:22:03,430 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:22:03,430 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:22:16,988 - INFO - Agent stopped by user
+2025-07-05 15:22:16,990 - INFO - Agent process terminated
+2025-07-05 15:22:21,346 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:22:21,371 - INFO - Fetching initial configuration from server...
+2025-07-05 15:22:21,373 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:22:21,405 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:22:52,772 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:22:59,845 - INFO - Agent stopped by user
+2025-07-05 15:22:59,846 - INFO - Agent process terminated
+2025-07-05 15:23:00,810 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:23:00,821 - INFO - Fetching initial configuration from server...
+2025-07-05 15:23:00,821 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:23:00,828 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:23:11,297 - INFO - Agent stopped by user
+2025-07-05 15:23:11,297 - INFO - Agent process terminated
+2025-07-05 15:23:12,414 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:23:12,460 - INFO - Fetching initial configuration from server...
+2025-07-05 15:23:12,460 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:23:12,478 - INFO - Config fetched successfully
+2025-07-05 15:23:12,478 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:12,478 - INFO - No company break schedules configured
+2025-07-05 15:23:12,478 - INFO - No user-specific break schedules configured
+2025-07-05 15:23:12,478 - INFO - User is not on leave
+2025-07-05 15:23:12,478 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:12,478 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:23:27,489 - INFO - Fetching initial configuration from server...
+2025-07-05 15:23:27,489 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:23:27,505 - INFO - Config fetched successfully
+2025-07-05 15:23:27,505 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:27,505 - INFO - No company break schedules configured
+2025-07-05 15:23:27,505 - INFO - No user-specific break schedules configured
+2025-07-05 15:23:27,505 - INFO - User is not on leave
+2025-07-05 15:23:27,505 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:27,506 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:23:42,515 - INFO - Fetching initial configuration from server...
+2025-07-05 15:23:42,516 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:23:42,529 - INFO - Config fetched successfully
+2025-07-05 15:23:42,529 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:42,529 - INFO - No company break schedules configured
+2025-07-05 15:23:42,529 - INFO - No user-specific break schedules configured
+2025-07-05 15:23:42,529 - INFO - User is not on leave
+2025-07-05 15:23:42,529 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:42,530 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:23:57,538 - INFO - Fetching initial configuration from server...
+2025-07-05 15:23:57,539 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:23:57,554 - INFO - Config fetched successfully
+2025-07-05 15:23:57,555 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:57,555 - INFO - No company break schedules configured
+2025-07-05 15:23:57,555 - INFO - No user-specific break schedules configured
+2025-07-05 15:23:57,555 - INFO - User is not on leave
+2025-07-05 15:23:57,556 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:23:57,556 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:24:12,568 - INFO - Fetching initial configuration from server...
+2025-07-05 15:24:12,568 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:24:12,584 - INFO - Config fetched successfully
+2025-07-05 15:24:12,584 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:12,584 - INFO - No company break schedules configured
+2025-07-05 15:24:12,584 - INFO - No user-specific break schedules configured
+2025-07-05 15:24:12,584 - INFO - User is not on leave
+2025-07-05 15:24:12,584 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:12,585 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:24:27,594 - INFO - Fetching initial configuration from server...
+2025-07-05 15:24:27,594 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:24:27,608 - INFO - Config fetched successfully
+2025-07-05 15:24:27,608 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:27,608 - INFO - No company break schedules configured
+2025-07-05 15:24:27,608 - INFO - No user-specific break schedules configured
+2025-07-05 15:24:27,608 - INFO - User is not on leave
+2025-07-05 15:24:27,608 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:27,608 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:24:42,614 - INFO - Fetching initial configuration from server...
+2025-07-05 15:24:42,615 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:24:42,623 - INFO - Config fetched successfully
+2025-07-05 15:24:42,623 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:42,623 - INFO - No company break schedules configured
+2025-07-05 15:24:42,623 - INFO - No user-specific break schedules configured
+2025-07-05 15:24:42,623 - INFO - User is not on leave
+2025-07-05 15:24:42,623 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:42,624 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:24:57,641 - INFO - Fetching initial configuration from server...
+2025-07-05 15:24:57,642 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:24:57,662 - INFO - Config fetched successfully
+2025-07-05 15:24:57,662 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:57,662 - INFO - No company break schedules configured
+2025-07-05 15:24:57,662 - INFO - No user-specific break schedules configured
+2025-07-05 15:24:57,663 - INFO - User is not on leave
+2025-07-05 15:24:57,663 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:24:57,664 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:25:12,669 - INFO - Fetching initial configuration from server...
+2025-07-05 15:25:12,670 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:25:12,680 - INFO - Config fetched successfully
+2025-07-05 15:25:12,680 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:12,680 - INFO - No company break schedules configured
+2025-07-05 15:25:12,680 - INFO - No user-specific break schedules configured
+2025-07-05 15:25:12,680 - INFO - User is not on leave
+2025-07-05 15:25:12,680 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:12,681 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:25:27,689 - INFO - Fetching initial configuration from server...
+2025-07-05 15:25:27,690 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:25:27,701 - INFO - Config fetched successfully
+2025-07-05 15:25:27,701 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:27,701 - INFO - No company break schedules configured
+2025-07-05 15:25:27,701 - INFO - No user-specific break schedules configured
+2025-07-05 15:25:27,701 - INFO - User is not on leave
+2025-07-05 15:25:27,701 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:27,702 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:25:42,715 - INFO - Fetching initial configuration from server...
+2025-07-05 15:25:42,716 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:25:42,729 - INFO - Config fetched successfully
+2025-07-05 15:25:42,729 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:42,730 - INFO - No company break schedules configured
+2025-07-05 15:25:42,730 - INFO - No user-specific break schedules configured
+2025-07-05 15:25:42,730 - INFO - User is not on leave
+2025-07-05 15:25:42,730 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:42,730 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:25:57,744 - INFO - Fetching initial configuration from server...
+2025-07-05 15:25:57,744 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:25:57,758 - INFO - Config fetched successfully
+2025-07-05 15:25:57,758 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:57,758 - INFO - No company break schedules configured
+2025-07-05 15:25:57,758 - INFO - No user-specific break schedules configured
+2025-07-05 15:25:57,758 - INFO - User is not on leave
+2025-07-05 15:25:57,758 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:25:57,758 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:26:12,766 - INFO - Fetching initial configuration from server...
+2025-07-05 15:26:12,768 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:26:12,782 - INFO - Config fetched successfully
+2025-07-05 15:26:12,782 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:12,782 - INFO - No company break schedules configured
+2025-07-05 15:26:12,782 - INFO - No user-specific break schedules configured
+2025-07-05 15:26:12,782 - INFO - User is not on leave
+2025-07-05 15:26:12,782 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:12,783 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:26:27,788 - INFO - Fetching initial configuration from server...
+2025-07-05 15:26:27,788 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:26:27,798 - INFO - Config fetched successfully
+2025-07-05 15:26:27,798 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:27,798 - INFO - No company break schedules configured
+2025-07-05 15:26:27,798 - INFO - No user-specific break schedules configured
+2025-07-05 15:26:27,798 - INFO - User is not on leave
+2025-07-05 15:26:27,798 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:27,798 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:26:42,817 - INFO - Fetching initial configuration from server...
+2025-07-05 15:26:42,818 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:26:42,831 - INFO - Config fetched successfully
+2025-07-05 15:26:42,831 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:42,831 - INFO - No company break schedules configured
+2025-07-05 15:26:42,831 - INFO - No user-specific break schedules configured
+2025-07-05 15:26:42,831 - INFO - User is not on leave
+2025-07-05 15:26:42,831 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:42,832 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:26:57,837 - INFO - Fetching initial configuration from server...
+2025-07-05 15:26:57,839 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:26:57,849 - INFO - Config fetched successfully
+2025-07-05 15:26:57,849 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:57,850 - INFO - No company break schedules configured
+2025-07-05 15:26:57,850 - INFO - No user-specific break schedules configured
+2025-07-05 15:26:57,850 - INFO - User is not on leave
+2025-07-05 15:26:57,850 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:26:57,850 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:27:12,862 - INFO - Fetching initial configuration from server...
+2025-07-05 15:27:12,863 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:27:12,880 - INFO - Config fetched successfully
+2025-07-05 15:27:12,880 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:27:12,880 - INFO - No company break schedules configured
+2025-07-05 15:27:12,880 - INFO - No user-specific break schedules configured
+2025-07-05 15:27:12,880 - INFO - User is not on leave
+2025-07-05 15:27:12,881 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:27:12,881 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:27:16,054 - INFO - Agent stopped by user
+2025-07-05 15:27:16,054 - INFO - Agent process terminated
+2025-07-05 15:27:22,007 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:27:22,018 - INFO - Fetching initial configuration from server...
+2025-07-05 15:27:22,018 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:27:22,023 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:27:22,023 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:27:37,036 - INFO - Fetching initial configuration from server...
+2025-07-05 15:27:37,037 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:27:37,047 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:27:37,048 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:27:45,016 - INFO - Agent stopped by user
+2025-07-05 15:27:45,017 - INFO - Agent process terminated
+2025-07-05 15:27:49,258 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:27:49,269 - INFO - Fetching initial configuration from server...
+2025-07-05 15:27:49,269 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:27:49,272 - ERROR - Error fetching config: 403 - {"detail":"Invalid API key"}
+2025-07-05 15:28:28,433 - INFO - Agent stopped by user
+2025-07-05 15:28:28,433 - INFO - Agent process terminated
+2025-07-05 15:28:30,437 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:28:30,445 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 15:28:35,446 - INFO - Agent stopped by user
+2025-07-05 15:28:35,447 - INFO - Agent process terminated
+2025-07-05 15:28:36,525 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 15:28:36,534 - INFO - Fetching initial configuration from server...
+2025-07-05 15:28:36,534 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:28:36,542 - INFO - Config fetched successfully
+2025-07-05 15:28:36,542 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:28:36,542 - INFO - No company break schedules configured
+2025-07-05 15:28:36,542 - INFO - No user-specific break schedules configured
+2025-07-05 15:28:36,542 - INFO - User is not on leave
+2025-07-05 15:28:36,542 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:28:36,543 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:28:51,555 - INFO - Fetching initial configuration from server...
+2025-07-05 15:28:51,555 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:28:51,570 - INFO - Config fetched successfully
+2025-07-05 15:28:51,570 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:28:51,570 - INFO - No company break schedules configured
+2025-07-05 15:28:51,570 - INFO - No user-specific break schedules configured
+2025-07-05 15:28:51,571 - INFO - User is not on leave
+2025-07-05 15:28:51,571 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:28:51,571 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:29:02,318 - INFO - Agent stopped by user
+2025-07-05 15:29:02,319 - INFO - Agent process terminated
+2025-07-05 15:29:08,419 - INFO - --- Agent First-Time Setup: Pairing Mode ---
+2025-07-05 15:29:35,962 - INFO - Connecting to ws://127.0.0.1:8000/monitor/ws/agent/pairing/ to pair with new ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 15:29:36,005 - INFO - Agent successfully paired with ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 15:29:36,006 - INFO - Pairing successful! Agent starting in monitoring mode.
+2025-07-05 15:29:36,010 - INFO - Fetching initial configuration from server...
+2025-07-05 15:29:36,010 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:29:36,018 - INFO - Config fetched successfully
+2025-07-05 15:29:36,018 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:29:36,018 - INFO - No company break schedules configured
+2025-07-05 15:29:36,018 - INFO - No user-specific break schedules configured
+2025-07-05 15:29:36,018 - INFO - User is not on leave
+2025-07-05 15:29:36,018 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:29:36,018 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 15:45:47,977 - INFO - Fetching initial configuration from server...
+2025-07-05 15:45:47,989 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 15:45:48,022 - INFO - Config fetched successfully
+2025-07-05 15:45:48,023 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 15:45:48,023 - INFO - No company break schedules configured
+2025-07-05 15:45:48,023 - INFO - No user-specific break schedules configured
+2025-07-05 15:45:48,023 - INFO - User is not on leave
+2025-07-05 15:45:48,023 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 15:45:48,023 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 16:33:21,389 - INFO - Fetching initial configuration from server...
+2025-07-05 16:33:21,390 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 16:33:21,420 - INFO - Config fetched successfully
+2025-07-05 16:33:21,420 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 16:33:21,420 - INFO - No company break schedules configured
+2025-07-05 16:33:21,420 - INFO - No user-specific break schedules configured
+2025-07-05 16:33:21,420 - INFO - User is not on leave
+2025-07-05 16:33:21,420 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 16:33:21,420 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 16:41:39,285 - INFO - Fetching initial configuration from server...
+2025-07-05 16:41:39,286 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 16:41:39,308 - INFO - Config fetched successfully
+2025-07-05 16:41:39,308 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 16:41:39,308 - INFO - No company break schedules configured
+2025-07-05 16:41:39,308 - INFO - No user-specific break schedules configured
+2025-07-05 16:41:39,308 - INFO - User is not on leave
+2025-07-05 16:41:39,308 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 16:41:39,309 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:32:05,903 - INFO - Fetching initial configuration from server...
+2025-07-05 17:32:05,904 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:32:05,917 - INFO - Config fetched successfully
+2025-07-05 17:32:05,917 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:32:05,917 - INFO - No company break schedules configured
+2025-07-05 17:32:05,917 - INFO - No user-specific break schedules configured
+2025-07-05 17:32:05,917 - INFO - User is not on leave
+2025-07-05 17:32:05,917 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:32:05,918 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:55:01,482 - INFO - Fetching initial configuration from server...
+2025-07-05 17:55:01,483 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:55:01,523 - INFO - Config fetched successfully
+2025-07-05 17:55:01,523 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:01,523 - INFO - No company break schedules configured
+2025-07-05 17:55:01,523 - INFO - No user-specific break schedules configured
+2025-07-05 17:55:01,523 - INFO - User is not on leave
+2025-07-05 17:55:01,523 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:01,524 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:55:16,535 - INFO - Fetching initial configuration from server...
+2025-07-05 17:55:16,535 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:55:16,554 - INFO - Config fetched successfully
+2025-07-05 17:55:16,554 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:16,554 - INFO - No company break schedules configured
+2025-07-05 17:55:16,554 - INFO - No user-specific break schedules configured
+2025-07-05 17:55:16,554 - INFO - User is not on leave
+2025-07-05 17:55:16,554 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:16,555 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:55:31,289 - INFO - Fetching initial configuration from server...
+2025-07-05 17:55:31,291 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:55:31,322 - INFO - Config fetched successfully
+2025-07-05 17:55:31,322 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:31,322 - INFO - No company break schedules configured
+2025-07-05 17:55:31,322 - INFO - No user-specific break schedules configured
+2025-07-05 17:55:31,322 - INFO - User is not on leave
+2025-07-05 17:55:31,322 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:31,323 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:55:46,343 - INFO - Fetching initial configuration from server...
+2025-07-05 17:55:46,345 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:55:46,369 - INFO - Config fetched successfully
+2025-07-05 17:55:46,369 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:46,369 - INFO - No company break schedules configured
+2025-07-05 17:55:46,369 - INFO - No user-specific break schedules configured
+2025-07-05 17:55:46,369 - INFO - User is not on leave
+2025-07-05 17:55:46,369 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:55:46,369 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:56:01,377 - INFO - Fetching initial configuration from server...
+2025-07-05 17:56:01,378 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:56:01,395 - INFO - Config fetched successfully
+2025-07-05 17:56:01,395 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:01,395 - INFO - No company break schedules configured
+2025-07-05 17:56:01,395 - INFO - No user-specific break schedules configured
+2025-07-05 17:56:01,396 - INFO - User is not on leave
+2025-07-05 17:56:01,396 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:01,396 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:56:16,403 - INFO - Fetching initial configuration from server...
+2025-07-05 17:56:16,405 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:56:16,419 - INFO - Config fetched successfully
+2025-07-05 17:56:16,419 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:16,419 - INFO - No company break schedules configured
+2025-07-05 17:56:16,419 - INFO - No user-specific break schedules configured
+2025-07-05 17:56:16,419 - INFO - User is not on leave
+2025-07-05 17:56:16,419 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:16,420 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:56:31,430 - INFO - Fetching initial configuration from server...
+2025-07-05 17:56:31,431 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:56:31,446 - INFO - Config fetched successfully
+2025-07-05 17:56:31,446 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:31,446 - INFO - No company break schedules configured
+2025-07-05 17:56:31,446 - INFO - No user-specific break schedules configured
+2025-07-05 17:56:31,446 - INFO - User is not on leave
+2025-07-05 17:56:31,447 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:31,447 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:56:46,455 - INFO - Fetching initial configuration from server...
+2025-07-05 17:56:46,455 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:56:46,471 - INFO - Config fetched successfully
+2025-07-05 17:56:46,471 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:46,471 - INFO - No company break schedules configured
+2025-07-05 17:56:46,471 - INFO - No user-specific break schedules configured
+2025-07-05 17:56:46,471 - INFO - User is not on leave
+2025-07-05 17:56:46,471 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:56:46,472 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:57:01,479 - INFO - Fetching initial configuration from server...
+2025-07-05 17:57:01,480 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:57:01,495 - INFO - Config fetched successfully
+2025-07-05 17:57:01,495 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:01,495 - INFO - No company break schedules configured
+2025-07-05 17:57:01,495 - INFO - No user-specific break schedules configured
+2025-07-05 17:57:01,495 - INFO - User is not on leave
+2025-07-05 17:57:01,495 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:01,495 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:57:16,503 - INFO - Fetching initial configuration from server...
+2025-07-05 17:57:16,504 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:57:16,519 - INFO - Config fetched successfully
+2025-07-05 17:57:16,519 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:16,519 - INFO - No company break schedules configured
+2025-07-05 17:57:16,519 - INFO - No user-specific break schedules configured
+2025-07-05 17:57:16,519 - INFO - User is not on leave
+2025-07-05 17:57:16,519 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:16,520 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:57:31,529 - INFO - Fetching initial configuration from server...
+2025-07-05 17:57:31,529 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:57:31,539 - INFO - Config fetched successfully
+2025-07-05 17:57:31,539 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:31,539 - INFO - No company break schedules configured
+2025-07-05 17:57:31,539 - INFO - No user-specific break schedules configured
+2025-07-05 17:57:31,539 - INFO - User is not on leave
+2025-07-05 17:57:31,539 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:31,539 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:57:46,549 - INFO - Fetching initial configuration from server...
+2025-07-05 17:57:46,551 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:57:46,567 - INFO - Config fetched successfully
+2025-07-05 17:57:46,567 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:46,567 - INFO - No company break schedules configured
+2025-07-05 17:57:46,567 - INFO - No user-specific break schedules configured
+2025-07-05 17:57:46,567 - INFO - User is not on leave
+2025-07-05 17:57:46,567 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:57:46,567 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:58:01,581 - INFO - Fetching initial configuration from server...
+2025-07-05 17:58:01,582 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:58:01,602 - INFO - Config fetched successfully
+2025-07-05 17:58:01,602 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:01,602 - INFO - No company break schedules configured
+2025-07-05 17:58:01,602 - INFO - No user-specific break schedules configured
+2025-07-05 17:58:01,602 - INFO - User is not on leave
+2025-07-05 17:58:01,602 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:01,603 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:58:16,618 - INFO - Fetching initial configuration from server...
+2025-07-05 17:58:16,618 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:58:16,634 - INFO - Config fetched successfully
+2025-07-05 17:58:16,634 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:16,634 - INFO - No company break schedules configured
+2025-07-05 17:58:16,634 - INFO - No user-specific break schedules configured
+2025-07-05 17:58:16,634 - INFO - User is not on leave
+2025-07-05 17:58:16,634 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:16,634 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:58:31,653 - INFO - Fetching initial configuration from server...
+2025-07-05 17:58:31,654 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:58:31,675 - INFO - Config fetched successfully
+2025-07-05 17:58:31,675 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:31,675 - INFO - No company break schedules configured
+2025-07-05 17:58:31,675 - INFO - No user-specific break schedules configured
+2025-07-05 17:58:31,675 - INFO - User is not on leave
+2025-07-05 17:58:31,675 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:31,676 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:58:46,683 - INFO - Fetching initial configuration from server...
+2025-07-05 17:58:46,683 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:58:46,697 - INFO - Config fetched successfully
+2025-07-05 17:58:46,698 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:46,698 - INFO - No company break schedules configured
+2025-07-05 17:58:46,698 - INFO - No user-specific break schedules configured
+2025-07-05 17:58:46,698 - INFO - User is not on leave
+2025-07-05 17:58:46,698 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:58:46,698 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:59:01,704 - INFO - Fetching initial configuration from server...
+2025-07-05 17:59:01,704 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:59:01,713 - INFO - Config fetched successfully
+2025-07-05 17:59:01,713 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:59:01,713 - INFO - No company break schedules configured
+2025-07-05 17:59:01,713 - INFO - No user-specific break schedules configured
+2025-07-05 17:59:01,713 - INFO - User is not on leave
+2025-07-05 17:59:01,713 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:59:01,714 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:59:16,722 - INFO - Fetching initial configuration from server...
+2025-07-05 17:59:16,723 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:59:16,737 - INFO - Config fetched successfully
+2025-07-05 17:59:16,737 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:59:16,737 - INFO - No company break schedules configured
+2025-07-05 17:59:16,738 - INFO - No user-specific break schedules configured
+2025-07-05 17:59:16,738 - INFO - User is not on leave
+2025-07-05 17:59:16,738 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:59:16,738 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 17:59:31,764 - INFO - Fetching initial configuration from server...
+2025-07-05 17:59:31,765 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 17:59:31,788 - INFO - Config fetched successfully
+2025-07-05 17:59:31,788 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 17:59:31,788 - INFO - No company break schedules configured
+2025-07-05 17:59:31,788 - INFO - No user-specific break schedules configured
+2025-07-05 17:59:31,788 - INFO - User is not on leave
+2025-07-05 17:59:31,788 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 17:59:31,788 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:15:17,424 - INFO - Fetching initial configuration from server...
+2025-07-05 18:15:17,427 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:15:17,470 - INFO - Config fetched successfully
+2025-07-05 18:15:17,470 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:15:17,470 - INFO - No company break schedules configured
+2025-07-05 18:15:17,470 - INFO - No user-specific break schedules configured
+2025-07-05 18:15:17,470 - INFO - User is not on leave
+2025-07-05 18:15:17,470 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:15:17,471 - WARNING - WebSocket connection lost during monitoring loop, will reconnect

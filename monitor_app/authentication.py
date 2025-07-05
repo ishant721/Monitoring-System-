@@ -1,13 +1,18 @@
 # monitor_app/authentication.py
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+from .models import Agent
 
 class AgentAPIKeyAuthentication(BaseAuthentication):
     """
     Custom authentication for agent API endpoints using API key and agent ID.
     """
     def authenticate(self, request):
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # Get the API key from the Authorization header or X-API-KEY header
         api_key = None
 
@@ -25,7 +30,11 @@ class AgentAPIKeyAuthentication(BaseAuthentication):
 
         # Validate the API key against MASTER_API_KEY
         expected_key = getattr(settings, 'MASTER_API_KEY', getattr(settings, 'AGENT_API_KEY', ''))
+        
+        logger.info(f"API Key Authentication - Received: {api_key[:10]}..., Expected: {expected_key[:10] if expected_key else 'None'}...")
+        
         if api_key != expected_key:
+            logger.error(f"API key mismatch - Received: {api_key}, Expected: {expected_key}")
             raise AuthenticationFailed('Invalid API key')
 
         # Get agent ID from header

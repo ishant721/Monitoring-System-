@@ -1512,14 +1512,14 @@ async def fetch_config():
     """Fetch configuration from the server."""
     global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control
     global is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control, current_schedule
-    
+
     try:
         headers = {
             'X-AGENT-ID': AGENT_ID,
-            'X-API-KEY': API_KEY,
+            'Authorization': f'Bearer {API_KEY}',
             'Content-Type': 'application/json'
         }
-        config_url = f"{BACKEND_URL}/api/config/"
+        config_url = f"{BACKEND_URL}/monitor/api/config/"
         logger.info(f"Fetching config from: {config_url}")
         async with aiohttp.ClientSession() as session:
             async with session.get(config_url, headers=headers) as response:
@@ -1538,7 +1538,10 @@ async def fetch_config():
                         logger.info(f"Updated agent configuration: Interval - {current_interval_ms // 1000}s, "
                                     f"Activity Monitoring - {is_activity_monitoring_enabled_by_control}, "
                                     f"Network Monitoring - {is_network_monitoring_enabled_by_control}")
-                    
+
+                    # Update break schedules
+                    update_break_schedules(config_data)
+
                     return config_data
                 else:
                     logger.error(f"Error fetching config: {response.status} - {await response.text()}")
@@ -1546,7 +1549,7 @@ async def fetch_config():
     except Exception as e:
         logger.error(f"Error fetching config from server: {e}")
         return None
-    
+
 def load_local_config():
     """Load settings from local file when server is unavailable"""
     global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control
@@ -1655,6 +1658,18 @@ async def run_monitoring_loop(config, agent_id):
                 message_handler_task = asyncio.create_task(websocket_message_handler())
 
                 while True:
+                    # Check if WebSocket is still connected before proceeding
+                    if not websocket_client or websocket_client.state != State.OPEN:
+                        logger.warning("WebSocket connection lost during monitoring loop, will reconnect")
+                        # Cancel the message handler task before breaking
+                        if not message_handler_task.done():
+                            message_handler_task.cancel()
+                            try:
+                                await message_handler_task
+                            except asyncio.CancelledError:
+                                pass
+                        break
+
                     current_time = time.time()
                     if current_time - last_config_fetch > CONFIG_REFRESH_INTERVAL:
                         print("Refreshing configuration from server...")
@@ -1662,18 +1677,46 @@ async def run_monitoring_loop(config, agent_id):
                         await fetch_config()
                         print(f"DEBUG: Keystroke logging flag AFTER refresh: {is_keystroke_logging_enabled_by_control}")
                         last_config_fetch = current_time
-                    await send_heartbeat()
-                    await send_keystroke_logs()
+                    
+                    try:
+                        await send_heartbeat()
+                        await send_keystroke_logs()
+                    except Exception as e:
+                        logger.error(f"Error sending data, connection may be lost: {e}")
+                        websocket_client = None
+                        break
 
                     interval_seconds = current_interval_ms / 1000
                     await asyncio.sleep(interval_seconds)
 
+                # Cleanup message handler task
+                if not message_handler_task.done():
+                    message_handler_task.cancel()
+                    try:
+                        await message_handler_task
+                    except asyncio.CancelledError:
+                        pass
+
         except websockets.exceptions.ConnectionClosed as e:
-            print(f"Connection closed (Code: {e.code}). Retrying in 15s...")
+            logger.warning(f"WebSocket connection closed (Code: {e.code}). Retrying in 15s...")
+            websocket_client = None
+        except websockets.exceptions.InvalidStatusCode as e:
+            logger.error(f"WebSocket connection failed with status {e.status_code}. Retrying in 15s...")
+            websocket_client = None
+        except websockets.exceptions.WebSocketException as e:
+            logger.error(f"WebSocket error: {e}. Retrying in 15s...")
             websocket_client = None
         except Exception as e:
-            print(f"An unexpected error occurred in monitoring loop: {e}. Retrying in 15s...")
+            logger.error(f"Unexpected error in monitoring loop: {e}. Retrying in 15s...")
             websocket_client = None
+
+        # Clean up any remaining tasks before reconnecting
+        if 'message_handler_task' in locals() and not message_handler_task.done():
+            message_handler_task.cancel()
+            try:
+                await message_handler_task
+            except asyncio.CancelledError:
+                pass
 
         await asyncio.sleep(15)
 

@@ -39,7 +39,7 @@ from ..permissions import AgentPermission
 
 @api_view(['GET'])
 @authentication_classes([AgentAPIKeyAuthentication])
-@permission_classes([])
+@permission_classes([AgentPermission])
 def get_config_api(request):
     """
     Called by agents to get their configuration.

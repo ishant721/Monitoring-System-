@@ -121,7 +121,7 @@ USE_I18N = True
 USE_TZ = True
 
 # Agent API Key for authentication
-MASTER_API_KEY = os.getenv('MASTER_API_KEY', 'your-secure-api-key-here')
+MASTER_API_KEY = 'your-secure-api-key-here'
 
 # Agent online timeout (seconds)
 AGENT_ONLINE_TIMEOUT_SECONDS = 30
