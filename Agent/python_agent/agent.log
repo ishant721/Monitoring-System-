@@ -16,3 +16,147 @@
 2025-07-05 11:03:26,088 - INFO - Config requires live stream ON, starting...
 2025-07-05 11:06:48,048 - INFO - Agent stopped by user
 2025-07-05 11:06:48,049 - INFO - Agent process terminated
+2025-07-05 11:30:04,433 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 11:30:04,453 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 11:35:11,068 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 11:35:22,079 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:35:32,723 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:35:43,105 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:35:53,701 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:36:04,242 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:36:14,656 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:36:25,309 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:36:35,723 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:36:46,136 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:36:56,554 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:37:07,117 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:37:17,535 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 11:37:25,092 - INFO - Agent stopped by user
+2025-07-05 11:37:25,093 - INFO - Agent process terminated
+2025-07-05 11:37:27,741 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 11:37:27,760 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 11:42:33,898 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 12:20:23,153 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 12:51:59,103 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:07:18,085 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:08:11,411 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:08:21,868 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:08:32,550 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:08:42,997 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:08:45,064 - INFO - Agent stopped by user
+2025-07-05 13:08:45,064 - INFO - Agent process terminated
+2025-07-05 13:08:47,142 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 13:08:47,155 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:13:42,903 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:13:52,908 - ERROR - Error fetching config from server: HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /api/config/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x111764cd0>: Failed to establish a new connection: [Errno 61] Connection refused'))
+2025-07-05 13:13:53,392 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:03,815 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:14,246 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:24,666 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:35,270 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:45,697 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:56,127 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:14:56,269 - INFO - Agent stopped by user
+2025-07-05 13:14:56,270 - INFO - Agent process terminated
+2025-07-05 13:14:57,995 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 13:14:58,003 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:16:20,282 - INFO - Agent stopped by user
+2025-07-05 13:16:20,283 - INFO - Agent process terminated
+2025-07-05 13:16:21,806 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 13:16:21,815 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:21:27,314 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:21:59,372 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:22:09,828 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:22:20,262 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:22:30,761 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:22:41,506 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:22:52,096 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:23:02,542 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:23:06,973 - INFO - Agent stopped by user
+2025-07-05 13:23:06,974 - INFO - Agent process terminated
+2025-07-05 13:23:08,590 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 13:23:08,610 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:23:08,610 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 13:23:08,610 - INFO - No company break schedules configured
+2025-07-05 13:23:08,610 - INFO - No user-specific break schedules configured
+2025-07-05 13:23:08,610 - INFO - User is not on leave
+2025-07-05 13:23:08,610 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 13:28:17,464 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:28:17,465 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 13:28:17,465 - INFO - No company break schedules configured
+2025-07-05 13:28:17,465 - INFO - No user-specific break schedules configured
+2025-07-05 13:28:17,465 - INFO - User is not on leave
+2025-07-05 13:28:17,465 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 13:30:14,301 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:30:24,901 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:30:35,490 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:30:45,935 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:30:47,299 - INFO - Agent stopped by user
+2025-07-05 13:30:47,300 - INFO - Agent process terminated
+2025-07-05 13:30:49,211 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 13:30:49,233 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:30:49,233 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 13:30:49,233 - INFO - No company break schedules configured
+2025-07-05 13:30:49,233 - INFO - No user-specific break schedules configured
+2025-07-05 13:30:49,233 - INFO - User is not on leave
+2025-07-05 13:30:49,233 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 13:33:34,386 - INFO - Processing global config update...
+2025-07-05 13:33:34,386 - INFO - Updated interval from global config: 10s
+2025-07-05 13:33:34,387 - INFO - Updated activity monitoring from global config: True
+2025-07-05 13:33:34,387 - INFO - Updated network monitoring from global config: True
+2025-07-05 13:33:34,387 - INFO - Updated monitoring schedule from global config
+2025-07-05 13:33:34,387 - INFO - Updated live streaming flag from global config: True
+2025-07-05 13:33:34,388 - INFO - Reconciling agent state with new global configuration...
+2025-07-05 13:33:34,388 - INFO - Config requires live stream ON, starting...
+2025-07-05 13:34:01,741 - INFO - Processing global config update...
+2025-07-05 13:34:01,741 - INFO - Updated interval from global config: 10s
+2025-07-05 13:34:01,741 - INFO - Updated activity monitoring from global config: True
+2025-07-05 13:34:01,742 - INFO - Updated network monitoring from global config: True
+2025-07-05 13:34:01,742 - INFO - Updated monitoring schedule from global config
+2025-07-05 13:34:01,742 - INFO - Updated live streaming flag from global config: True
+2025-07-05 13:34:01,742 - INFO - Reconciling agent state with new global configuration...
+2025-07-05 13:34:01,742 - INFO - Live stream correctly running as per config
+2025-07-05 13:35:04,015 - INFO - Agent outside active schedule. Current time: 13:35:04
+2025-07-05 13:35:14,017 - INFO - Agent outside active schedule. Current time: 13:35:14
+2025-07-05 13:35:24,062 - INFO - Agent outside active schedule. Current time: 13:35:24
+2025-07-05 13:35:34,104 - INFO - Agent outside active schedule. Current time: 13:35:34
+2025-07-05 13:35:44,106 - INFO - Agent outside active schedule. Current time: 13:35:44
+2025-07-05 13:35:54,146 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:35:54,147 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 13:35:54,147 - INFO - No company break schedules configured
+2025-07-05 13:35:54,147 - INFO - No user-specific break schedules configured
+2025-07-05 13:35:54,147 - INFO - User is not on leave
+2025-07-05 13:35:54,147 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 13:35:54,148 - INFO - Agent outside active schedule. Current time: 13:35:54
+2025-07-05 13:36:04,149 - INFO - Agent outside active schedule. Current time: 13:36:04
+2025-07-05 13:36:14,150 - INFO - Agent outside active schedule. Current time: 13:36:14
+2025-07-05 13:36:24,048 - INFO - Agent outside active schedule. Current time: 13:36:24
+2025-07-05 13:36:34,075 - INFO - Agent outside active schedule. Current time: 13:36:34
+2025-07-05 13:36:44,079 - INFO - Agent outside active schedule. Current time: 13:36:44
+2025-07-05 13:36:54,082 - INFO - Agent outside active schedule. Current time: 13:36:54
+2025-07-05 13:37:04,086 - INFO - Agent outside active schedule. Current time: 13:37:04
+2025-07-05 13:37:14,090 - INFO - Agent outside active schedule. Current time: 13:37:14
+2025-07-05 13:37:24,092 - INFO - Agent outside active schedule. Current time: 13:37:24
+2025-07-05 13:44:29,645 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:44:29,646 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 13:44:29,646 - INFO - No company break schedules configured
+2025-07-05 13:44:29,646 - INFO - No user-specific break schedules configured
+2025-07-05 13:44:29,646 - INFO - User is not on leave
+2025-07-05 13:44:29,646 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 13:44:29,647 - INFO - Agent outside active schedule. Current time: 13:44:29
+2025-07-05 13:44:39,648 - INFO - Agent outside active schedule. Current time: 13:44:39
+2025-07-05 13:44:49,649 - INFO - Agent outside active schedule. Current time: 13:44:49
+2025-07-05 13:44:59,722 - INFO - Agent outside active schedule. Current time: 13:44:59
+2025-07-05 13:45:09,723 - INFO - Agent outside active schedule. Current time: 13:45:09
+2025-07-05 13:45:19,781 - INFO - Agent outside active schedule. Current time: 13:45:19
+2025-07-05 13:45:29,782 - INFO - Agent outside active schedule. Current time: 13:45:29
+2025-07-05 13:45:39,854 - INFO - Agent outside active schedule. Current time: 13:45:39
+2025-07-05 13:45:44,350 - INFO - Processing global config update...
+2025-07-05 13:45:44,350 - INFO - Updated interval from global config: 10s
+2025-07-05 13:45:44,350 - INFO - Updated activity monitoring from global config: True
+2025-07-05 13:45:44,350 - INFO - Updated network monitoring from global config: True
+2025-07-05 13:45:44,350 - INFO - Updated monitoring schedule from global config
+2025-07-05 13:45:44,350 - INFO - Updated live streaming flag from global config: True
+2025-07-05 13:45:44,350 - INFO - Reconciling agent state with new global configuration...
+2025-07-05 13:45:44,350 - INFO - Live stream correctly running as per config
+2025-07-05 13:46:00,864 - WARNING - WebSocket not connected. Cannot send heartbeat.

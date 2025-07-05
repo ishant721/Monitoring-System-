@@ -1,4 +1,3 @@
-
 {% extends "accounts/base.html" %}
 {% load crispy_forms_tags %}
 
@@ -187,72 +186,45 @@
 </div>
 
 <script>
+// Access token from Django context
+const ACCESS_TOKEN = '{{ access_token }}';
+
+// API Headers
+const getHeaders = () => ({
+    'Authorization': `Bearer ${ACCESS_TOKEN}`,
+    'Content-Type': 'application/json'
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Load agent status on page load
     loadAgentStatus();
-    
+
     // Refresh agent status every 30 seconds
     setInterval(loadAgentStatus, 30000);
-    
+
     // Stop all agents
     document.getElementById('stopAllAgents').addEventListener('click', function() {
-        if (!confirm('Are you sure you want to stop ALL monitoring agents?')) return;
-        
-        fetch('{% url "monitor_app:api_admin_control_agents" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ action: 'stop_all' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('All agents stopped successfully');
-                loadAgentStatus();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while stopping agents');
-        });
+        if (confirm('Are you sure you want to stop ALL monitoring agents?')) {
+            alert('Agent control functionality will be implemented in a future update.');
+            return;
+        }
     });
-    
+
     // Resume all agents
     document.getElementById('resumeAllAgents').addEventListener('click', function() {
-        fetch('{% url "monitor_app:api_admin_control_agents" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({ action: 'resume_all' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('All agents resumed successfully');
-                loadAgentStatus();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while resuming agents');
-        });
+        alert('Agent control functionality will be implemented in a future update.');
+        return;
     });
 });
 
 function loadAgentStatus() {
-    fetch('{% url "monitor_app:api_agent_status" %}')
+    fetch('/monitor/api/agent-status/', {
+        headers: getHeaders()
+    })
         .then(response => response.json())
         .then(data => {
             const statusDiv = document.getElementById('agentStatusTable');
-            if (data.agents && data.agents.length > 0) {
+            if (data && data.length > 0) {
                 let html = `
                     <div class="table-responsive">
                         <table class="table table-striped table-sm">
@@ -268,19 +240,19 @@ function loadAgentStatus() {
                             </thead>
                             <tbody>
                 `;
-                
-                data.agents.forEach(agent => {
+
+                data.forEach(agent => {
                     const statusBadge = agent.is_online ? 
                         '<span class="badge bg-success">Online</span>' : 
                         '<span class="badge bg-danger">Offline</span>';
-                    
-                    const monitoringStatus = agent.is_monitoring_active ? 
+
+                    const monitoringStatus = agent.is_activity_monitoring_enabled ? 
                         '<span class="badge bg-primary">Active</span>' : 
                         '<span class="badge bg-secondary">Stopped</span>';
-                    
+
                     html += `
                         <tr>
-                            <td>${agent.user_name}</td>
+                            <td>${agent.user_email}</td>
                             <td><code>${agent.agent_id}</code></td>
                             <td>${statusBadge}</td>
                             <td>${agent.last_seen || 'Never'}</td>
@@ -293,7 +265,7 @@ function loadAgentStatus() {
                         </tr>
                     `;
                 });
-                
+
                 html += '</tbody></table></div>';
                 statusDiv.innerHTML = html;
             } else {
@@ -308,29 +280,8 @@ function loadAgentStatus() {
 }
 
 function controlAgent(agentId, action) {
-    fetch('{% url "monitor_app:api_admin_control_agents" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify({ 
-            action: action,
-            agent_id: agentId 
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            loadAgentStatus();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred while controlling the agent');
-    });
+    alert('Agent control functionality will be implemented in a future update.');
+    return;
 }
 </script>
 {% endblock %}

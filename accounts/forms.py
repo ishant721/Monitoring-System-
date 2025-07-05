@@ -446,60 +446,101 @@ class BulkMonitoringConfigForm(forms.Form):
         min_value=5,
         max_value=300,
         label="Screenshot Interval (seconds)",
-        help_text="How often to capture screenshots (5-300 seconds)"
-    )
+        help_text="How often to capture screenshots (5-300 seconds)")
 
-    # Premium features (disabled by default)
-    is_live_streaming_enabled = forms.BooleanField(
-        required=False, 
-        initial=False,
-        label="Live Streaming",
-        help_text="Enable real-time screen streaming (Premium feature)"
-    )
-    is_video_recording_enabled = forms.BooleanField(
-        required=False, 
-        initial=False,
-        label="Video Recording",
-        help_text="Enable screen recording functionality (Premium feature)"
-    )
-    is_keystroke_logging_enabled = forms.BooleanField(
-        required=False, 
-        initial=False,
-        label="Keystroke Logging",
-        help_text="Capture detailed keystroke logs (Premium feature - use responsibly)"
-    )
-    is_email_monitoring_enabled = forms.BooleanField(
-        required=False, 
-        initial=False,
-        label="Email Monitoring",
-        help_text="Monitor email activity (Premium feature)"
-    )
 
-    # Optional features (disabled by default)
-    is_live_streaming_enabled = forms.BooleanField(
-        required=False,
-        initial=False,
-        label="Live Streaming",
-        help_text="Enable real-time screen streaming"
+class BulkBreakScheduleForm(forms.Form):
+    OPERATION_CHOICES = [
+        ('add_break', 'Add Break Schedule'),
+        ('set_leave', 'Set Leave Status'),
+    ]
+    
+    operation = forms.ChoiceField(
+        choices=OPERATION_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        help_text="Select the operation to perform"
     )
-    is_video_recording_enabled = forms.BooleanField(
-        required=False,
-        initial=False,
-        label="Video Recording",
-        help_text="Record screen activity as video files"
+    
+    users = forms.ModelMultipleChoiceField(
+        queryset=CustomUser.objects.none(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control', 'size': '10'}),
+        help_text="Select users to apply the operation to"
     )
-    is_keystroke_logging_enabled = forms.BooleanField(
+    
+    # Break schedule fields
+    name = forms.CharField(
+        max_length=100,
         required=False,
-        initial=False,
-        label="Keystroke Logging",
-        help_text="Log keyboard input (use with caution)"
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Team Break'}),
+        help_text="Name for the break schedule"
     )
-    is_email_monitoring_enabled = forms.BooleanField(
+    
+    day = forms.ChoiceField(
+        choices=CompanyBreakSchedule.WEEKDAY_CHOICES,
         required=False,
-        initial=False,
-        label="Email Monitoring",
-        help_text="Monitor user's email activity"
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        initial='daily'
     )
+    
+    start_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+    
+    end_time = forms.TimeField(
+        required=False,
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+    
+    # Leave fields
+    leave_name = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Vacation'}),
+        help_text="Name for the leave period"
+    )
+    
+    leave_start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    
+    leave_end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+    
+    leave_reason = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Optional reason for leave'})
+    )
+    
+    def __init__(self, *args, admin=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if admin:
+            self.fields['users'].queryset = CustomUser.objects.filter(
+                company_admin=admin,
+                role=CustomUser.USER,
+                is_active=True
+            )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        operation = cleaned_data.get('operation')
+        
+        if operation == 'add_break':
+            if not all([cleaned_data.get('name'), cleaned_data.get('start_time'), cleaned_data.get('end_time')]):
+                raise forms.ValidationError("Name, start time, and end time are required for break schedules.")
+        
+        elif operation == 'set_leave':
+            if not all([cleaned_data.get('leave_start_date'), cleaned_data.get('leave_end_date')]):
+                raise forms.ValidationError("Start date and end date are required for leave periods.")
+            
+            if cleaned_data.get('leave_start_date') and cleaned_data.get('leave_end_date'):
+                if cleaned_data['leave_start_date'] > cleaned_data['leave_end_date']:
+                    raise forms.ValidationError("Leave end date must be after start date.")
+        
+        return cleaned_data
 
 
 class AdminFeatureRestrictionsForm(forms.ModelForm):
@@ -658,3 +699,66 @@ class AdminAddUserForm(WorkEmailDomainValidationMixin, forms.ModelForm):
         if commit:
             user.save()
         return user
+
+class CompanyBreakScheduleForm(forms.ModelForm):
+    class Meta:
+        model = CompanyBreakSchedule
+        fields = ['name', 'day', 'start_time', 'end_time', 'is_active']
+        widgets = {
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Lunch Break'}),
+            'day': forms.Select(attrs={'class': 'form-select'}),
+        }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        
+        if start_time and end_time and start_time >= end_time:
+            raise forms.ValidationError("End time must be after start time.")
+        
+        return cleaned_data
+
+class UserBreakScheduleForm(forms.ModelForm):
+    class Meta:
+        model = UserBreakSchedule
+        fields = ['user', 'name', 'day', 'start_time', 'end_time', 'is_on_leave', 
+                 'leave_start_date', 'leave_end_date', 'leave_reason', 'is_active']
+        widgets = {
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'leave_start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'leave_end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Personal Break'}),
+            'day': forms.Select(attrs={'class': 'form-select'}),
+            'user': forms.Select(attrs={'class': 'form-select'}),
+            'leave_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        admin = kwargs.pop('admin', None)
+        super().__init__(*args, **kwargs)
+        if admin:
+            self.fields['user'].queryset = CustomUser.objects.filter(
+                company_admin=admin, 
+                role=CustomUser.USER
+            )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        is_on_leave = cleaned_data.get('is_on_leave')
+        leave_start_date = cleaned_data.get('leave_start_date')
+        leave_end_date = cleaned_data.get('leave_end_date')
+        
+        if not is_on_leave:
+            if start_time and end_time and start_time >= end_time:
+                raise forms.ValidationError("End time must be after start time.")
+        else:
+            if leave_start_date and leave_end_date and leave_start_date > leave_end_date:
+                raise forms.ValidationError("Leave end date must be after start date.")
+        
+        return cleaned_data

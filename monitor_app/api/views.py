@@ -6,6 +6,14 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime, parse_time
 from django.utils import timezone
 from django.db import transaction
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
+from accounts.decorators import admin_required
+from monitor_app.models import Agent
+import json
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -537,240 +545,6 @@ def toggle_live_streaming_api_view(request, agent_id):
         return Response({"error": "Failed to toggle live streaming"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['POST'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def broadcast_config_update(request):
-    # ... This view is correct, no changes needed
-    user = request.user
-    agents_to_update = Agent.objects.none()
-    if user.is_superuser:
-        agents_to_update = Agent.objects.all()
-    elif user.role == CustomUser.ADMIN:
-        agents_to_update = Agent.objects.filter(user__company_admin=user)
-    else:
-        agents_to_update = Agent.objects.filter(user=user)
-
-    if not agents_to_update.exists():
-        return Response({"error": "No agents found to update."}, status=status.HTTP_404_NOT_FOUND)
-
-    config_data = request.data
-    valid_keys = ['capture_interval', 'activity_monitoring_enabled', 'network_monitoring_enabled', 'schedule']
-    filtered_config = {k: v for k, v in config_data.items() if k in valid_keys}
-
-    if not filtered_config:
-        return Response({"error": "No valid configuration keys provided."}, status=status.HTTP_400_BAD_REQUEST)
-
-    channel_layer = get_channel_layer()
-
-    def format_time(t): return t.strftime('%H:%M') if t else None
-    schedule_days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-
-    with transaction.atomic():
-        for agent in agents_to_update:
-            if 'capture_interval' in filtered_config:
-                agent.capture_interval_seconds = int(filtered_config['capture_interval'])
-            if 'activity_monitoring_enabled' in filtered_config:
-                agent.is_activity_monitoring_enabled = bool(filtered_config['activity_monitoring_enabled'])
-            if 'network_monitoring_enabled' in filtered_config:
-                agent.is_network_monitoring_enabled = bool(filtered_config['network_monitoring_enabled'])
-            agent.save()
-
-            schedule = {day: {"start": format_time(getattr(agent, f'{day}_active_start', None)), "end": format_time(getattr(agent, f'{day}_active_end', None))} for day in schedule_days}
-
-            broadcast_message = {
-                "type": "control_command",
-                "action": "set_global_config",
-                "feature_bundle": "global_config",
-                "capture_interval": agent.capture_interval_seconds,
-                "activity_monitoring_enabled": agent.is_activity_monitoring_enabled,
-                "network_monitoring_enabled": agent.is_network_monitoring_enabled,
-                "schedule": schedule
-            }
-            async_to_sync(channel_layer.group_send)(f"agent_{agent.agent_id}", broadcast_message)
-
-    return Response({
-        "message": f"Configuration updated and broadcast sent to {agents_to_update.count()} agents.",
-        "config_sent": filtered_config
-    }, status=status.HTTP_200_OK)
-
-
-# --- The rest of the history/list views are correct and need no changes ---
-@api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def agent_data_history_api_view(request):
-    # ... (code is sound, no changes needed)
-    user = request.user; allowed_agent_ids = []
-    if user.is_superuser:
-        allowed_agent_ids = list(Agent.objects.values_list('agent_id', flat=True))
-    elif user.role == CustomUser.ADMIN:
-        allowed_agent_ids = list(Agent.objects.filter(user__company_admin=user).values_list('agent_id', flat=True))
-
-    if not allowed_agent_ids: return Response([])
-
-    queryset = AgentData.objects.filter(agent_id__in=allowed_agent_ids)
-    if agent_id_filter := request.GET.get('agent_id'):
-        if agent_id_filter not in allowed_agent_ids: return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
-        queryset = queryset.filter(agent_id=agent_id_filter)
-    if start_time_str := request.GET.get('start_time'): queryset = queryset.filter(timestamp__gte=parse_datetime(start_time_str))
-    if end_time_str := request.GET.get('end_time'): queryset = queryset.filter(timestamp__lte=parse_datetime(end_time_str))
-
-    limit = int(request.GET.get('limit', 500)); queryset = queryset.order_by('-timestamp')[:limit]
-
-    data = [{
-        'agent_id': item.agent_id, 
-        'timestamp': item.timestamp.isoformat(), 
-        'window_title': item.window_title, 
-        'active_browser_url': item.active_browser_url, 
-        'screenshot_url': request.build_absolute_uri(item.screenshot.url) if item.screenshot else None, 
-        'keystroke_count': item.keystroke_count, 
-        'mouse_event_count': item.mouse_event_count, 
-        'upload_bytes': item.upload_bytes,
-        'download_bytes': item.download_bytes,
-        'network_type': item.network_type,
-        'productive_status': item.productive_status,
-        'is_activity_monitoring_enabled': item.is_activity_monitoring_enabled,
-        'is_network_monitoring_enabled': item.is_network_monitoring_enabled,
-        'capture_interval_seconds': item.capture_interval_seconds
-    } for item in queryset]
-    return Response(data)
-
-@api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def recorded_video_list_api_view(request):
-    # ... (code is sound, no changes needed)
-    user = request.user; queryset = RecordedVideo.objects.none()
-    if user.is_superuser:
-        queryset = RecordedVideo.objects.select_related('agent__user')
-    elif user.role == CustomUser.ADMIN:
-        queryset = RecordedVideo.objects.select_related('agent__user').filter(agent__user__company_admin=user)
-
-    if agent_id := request.GET.get('agent_id'): queryset = queryset.filter(agent__agent_id=agent_id)
-    limit = int(request.GET.get('limit', 50)); queryset = queryset.order_by('-upload_time')[:limit]
-
-    data = [{'id': video.id, 'agent_id': video.agent.agent_id, 'user_email': video.agent.user.email, 'filename': video.filename, 'video_url': request.build_absolute_uri(video.video_file.url) if video.video_file else 'Local Storage', 'upload_time': video.upload_time.isoformat(), 'storage_type': 'Local' if not video.video_file else 'Server'} for video in queryset]
-    return Response(data)
-
-@api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def keylog_history_api_view(request):
-    # ... (code is sound, no changes needed)
-    user = request.user
-    allowed_agents = Agent.objects.none()
-    if user.is_superuser:
-        allowed_agents = Agent.objects.all()
-    elif user.role == CustomUser.ADMIN:
-        allowed_agents = Agent.objects.filter(user__company_admin=user)
-
-    if not allowed_agents.exists(): return Response([])
-
-    queryset = KeyLog.objects.filter(agent__in=allowed_agents)
-    if agent_id_filter := request.GET.get('agent_id'):
-        if not allowed_agents.filter(agent_id=agent_id_filter).exists(): return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
-        queryset = queryset.filter(agent__agent_id=agent_id_filter)
-
-    log_type = request.GET.get('log_type', 'all')
-    if log_type == 'messaging': queryset = queryset.filter(is_messaging_log=True)
-    elif log_type == 'general': queryset = queryset.filter(is_messaging_log=False)
-
-    limit = int(request.GET.get('limit', 1000)); queryset = queryset.select_related('agent__user').order_by('-timestamp')[:limit]
-
-    data = [{'agent_id': log.agent.agent_id, 'user_email': log.agent.user.email, 'timestamp': log.timestamp.isoformat(), 'source_app': log.source_app, 'key_sequence': log.key_sequence, 'is_messaging': log.is_messaging_log} for log in queryset]
-    return Response(data)
-
-@api_view(['GET'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def live_streams_api_view(request):
-    """
-    Get all currently live streaming agents
-    """
-    user = request.user
-    live_only = request.GET.get('live_only', 'false').lower() == 'true'
-
-    try:
-        # Get agents based on user role
-        if user.role == CustomUser.SUPERADMIN:
-            agents = Agent.objects.all()
-        elif user.role == CustomUser.ADMIN:
-            agents = Agent.objects.filter(user__company_admin=user)
-        else:
-            return Response({"error": "Insufficient permissions"}, status=status.HTTP_403_FORBIDDEN)
-
-        # Filter for live streaming agents if requested
-        if live_only:
-            agents = agents.filter(is_live_streaming=True, is_live_streaming_enabled=True)
-
-        agents_data = []
-        for agent in agents:
-            if agent.user:
-                agents_data.append({
-                    'agent_id': agent.agent_id,
-                    'user_email': agent.user.email,
-                    'is_live_streaming': agent.is_live_streaming,
-                    'is_live_streaming_enabled': agent.is_live_streaming_enabled,
-                    'last_seen': agent.last_seen.isoformat() if agent.last_seen else None,
-                    'live_stream_url': agent.live_stream_url
-                })
-
-        return Response(agents_data, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        logger.error(f"Error getting live streams: {e}")
-        return Response({"error": "Failed to get live streams"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['POST'])
-@authentication_classes([JWTAuthentication])
-@permission_classes([IsAuthenticated])
-def toggle_live_streaming_api_view(request, agent_id):
-    """
-    Toggle live streaming for a specific agent
-    """
-    user = request.user
-
-    try:
-        # Get agent based on user role
-        if user.role == CustomUser.SUPERADMIN:
-            agent = Agent.objects.get(agent_id=agent_id)
-        elif user.role == CustomUser.ADMIN:
-            agent = Agent.objects.get(agent_id=agent_id, user__company_admin=user)
-        else:
-            return Response({"error": "Insufficient permissions"}, status=status.HTTP_403_FORBIDDEN)
-
-        # Toggle live streaming enabled status
-        agent.is_live_streaming_enabled = not agent.is_live_streaming_enabled
-        agent.save(update_fields=['is_live_streaming_enabled'])
-
-        # Send control command to agent
-        channel_layer = get_channel_layer()
-        control_message = {
-            "type": "control_command",
-            "action": "set_global_config",
-            "feature_bundle": "global_config",
-            "live_streaming_enabled": agent.is_live_streaming_enabled,
-            "capture_interval": agent.capture_interval_seconds,
-            "activity_monitoring_enabled": agent.is_activity_monitoring_enabled,
-            "network_monitoring_enabled": agent.is_network_monitoring_enabled
-        }
-
-        async_to_sync(channel_layer.group_send)(f"agent_{agent_id}", control_message)
-
-        return Response({
-            "message": f"Live streaming {'enabled' if agent.is_live_streaming_enabled else 'disabled'} for agent {agent_id}",
-            "is_live_streaming_enabled": agent.is_live_streaming_enabled
-        }, status=status.HTTP_200_OK)
-
-    except Agent.DoesNotExist:
-        return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        logger.error(f"Error toggling live streaming for agent {agent_id}: {e}")
-        return Response({"error": "Failed to toggle live streaming"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 @api_view(['GET'])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -787,6 +561,8 @@ def get_agent_config(request):
 
         agent = Agent.objects.get(agent_id=agent_id)
         user = agent.user
+        import logging
+        logger = logging.getLogger(__name__)
 
         # Build the schedule object from agent model
         schedule = {}
@@ -801,55 +577,52 @@ def get_agent_config(request):
                 'end': end_time.strftime('%H:%M') if end_time else None
             }
 
-        # Get company break schedules
+        # Get break schedules for the user
         company_breaks = []
-        if user and user.company_admin:
-            from accounts.models import CompanyBreakSchedule
-            company_break_schedules = CompanyBreakSchedule.objects.filter(
-                admin=user.company_admin, 
-                is_active=True
-            )
-            for break_schedule in company_break_schedules:
-                company_breaks.append({
-                    'name': break_schedule.name,
-                    'day': break_schedule.day,
-                    'start': break_schedule.start_time.strftime('%H:%M'),
-                    'end': break_schedule.end_time.strftime('%H:%M')
-                })
-
-        # Get user-specific break schedules and leave status
         user_break_schedule = []
         is_user_on_leave = False
-        if user:
-            from accounts.models import UserBreakSchedule
-            from datetime import date
 
-            # Check for active leave
-            active_leave = UserBreakSchedule.objects.filter(
-                user=user,
-                is_on_leave=True,
-                is_active=True,
-                leave_start_date__lte=date.today(),
-                leave_end_date__gte=date.today()
-            ).first()
-
-            if active_leave:
-                is_user_on_leave = True
-
-            # Get user break schedules
-            user_breaks = UserBreakSchedule.objects.filter(
-                user=user,
-                is_active=True,
-                is_on_leave=False
+        if user and user.company_admin:
+            # Get company-wide breaks
+            from accounts.models import CompanyBreakSchedule
+            company_break_schedules = CompanyBreakSchedule.objects.filter(
+                admin=user.company_admin,
+                is_active=True
             )
-            for break_schedule in user_breaks:
-                if break_schedule.start_time and break_schedule.end_time:
+
+            company_breaks = [
+                {
+                    'name': schedule.name,
+                    'day': schedule.day,
+                    'start': schedule.start_time.strftime('%H:%M'),
+                    'end': schedule.end_time.strftime('%H:%M')
+                }
+                for schedule in company_break_schedules
+            ]
+
+            # Get user-specific breaks
+            from accounts.models import UserBreakSchedule
+            user_break_schedules = UserBreakSchedule.objects.filter(
+                user=user,
+                is_active=True
+            )
+
+            for schedule in user_break_schedules:
+                if schedule.is_on_leave:
+                    is_user_on_leave = True
+                elif schedule.start_time and schedule.end_time:  # Only add if both times are set
                     user_break_schedule.append({
-                        'name': break_schedule.name,
-                        'day': break_schedule.day,
-                        'start': break_schedule.start_time.strftime('%H:%M'),
-                        'end': break_schedule.end_time.strftime('%H:%M')
+                        'name': schedule.name,
+                        'day': schedule.day,
+                        'start': schedule.start_time.strftime('%H:%M'),
+                        'end': schedule.end_time.strftime('%H:%M')
                     })
+
+            # Log the break schedules being sent
+            logger.info(f"Sending break schedules to agent {agent_id}:")
+            logger.info(f"  Company breaks: {len(company_breaks)} schedules")
+            logger.info(f"  User breaks: {len(user_break_schedule)} schedules") 
+            logger.info(f"  User on leave: {is_user_on_leave}")
 
         # Return agent-specific configuration
         config = {
@@ -872,3 +645,103 @@ def get_agent_config(request):
         return Response({'error': 'Agent not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': f'Configuration fetch failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@login_required
+@admin_required
+def agent_status_api(request):
+    """
+    API endpoint to get agent status for the admin's managed users.
+    """
+    try:
+        # Get agents for users managed by this admin
+        from accounts.models import CustomUser
+        managed_users = CustomUser.objects.filter(
+            company_admin=request.user,             role=CustomUser.USER
+        )
+
+        agents_data = []
+        for user in managed_users:
+            for agent in user.agents.all():
+                agents_data.append({
+                    'agent_id': agent.agent_id,
+                    'user_name': user.get_full_name(),
+                    'user_email': user.email,
+                    'is_online': agent.is_active,
+                    'is_monitoring_active': agent.is_active,
+                    'last_seen': agent.last_seen.strftime('%Y-%m-%d %H:%M:%S') if agent.last_seen else None,
+                })
+
+        return JsonResponse({
+            'success': True,
+            'agents': agents_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })
+
+@login_required
+@admin_required
+@csrf_exempt
+@require_http_methods(["POST"])
+def admin_control_agents_api(request):
+    """
+    API endpoint for admin to control agents.
+    """
+    try:
+        data = json.loads(request.body)
+        action = data.get('action')
+        agent_id = data.get('agent_id')
+
+        if action == 'resume_all':
+            # Resume all agents for managed users
+            from accounts.models import CustomUser
+            managed_users = CustomUser.objects.filter(
+                company_admin=request.user, 
+                role=CustomUser.USER
+            )
+
+            count = 0
+            for user in managed_users:
+                for agent in user.agents.all():
+                    agent.is_active = True
+                    agent.save()
+                    count += 1
+
+            return JsonResponse({
+                'success': True,
+                'message': f'Resumed {count} agents'
+            })
+
+        elif action == 'toggle' and agent_id:
+            # Toggle specific agent
+            try:
+                agent = Agent.objects.get(
+                    agent_id=agent_id,
+                    user__company_admin=request.user
+                )
+                agent.is_active = not agent.is_active
+                agent.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Agent {agent_id} {"activated" if agent.is_active else "deactivated"}'
+                })
+            except Agent.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Agent not found'
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid action'
+            })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': str(e)
+        })

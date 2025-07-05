@@ -1,0 +1,202 @@
+
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Bulk Break Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-users me-2"></i>Bulk Break Management</h2>
+                <a href="{% url 'accounts:break_overview' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Overview
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Bulk Operations</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="bulkBreakForm">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.operation|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.users|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Break Schedule Fields -->
+                        <div id="breakFields" class="row">
+                            <div class="col-md-4">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ form.day|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.start_time|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.end_time|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <!-- Leave Fields -->
+                        <div id="leaveFields" class="row" style="display: none;">
+                            <div class="col-md-3">
+                                {{ form.leave_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.leave_start_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.leave_end_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ form.leave_reason|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Apply to Selected Users
+                                </button>
+                                <button type="button" class="btn btn-outline-success" onclick="selectAllUsers()">
+                                    <i class="fas fa-check-square me-1"></i>Select All Users
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearSelection()">
+                                    <i class="fas fa-times me-1"></i>Clear Selection
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User List -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Managed Users ({{ managed_users.count }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="selectAll" onchange="toggleAllUsers(this)">
+                                    </th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Current Breaks</th>
+                                    <th>Leave Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in managed_users %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="user-checkbox" value="{{ user.id }}">
+                                    </td>
+                                    <td>{{ user.get_full_name }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        {% for break_schedule in user.user_break_schedules.all %}
+                                            {% if not break_schedule.is_on_leave %}
+                                                <span class="badge bg-secondary me-1">{{ break_schedule.name }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for leave_schedule in user.user_break_schedules.all %}
+                                            {% if leave_schedule.is_on_leave and leave_schedule.is_active %}
+                                                <span class="badge bg-info">On Leave</span>
+                                                <small class="text-muted">({{ leave_schedule.leave_start_date }} - {{ leave_schedule.leave_end_date }})</small>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const operationSelect = document.getElementById('id_operation');
+    const breakFields = document.getElementById('breakFields');
+    const leaveFields = document.getElementById('leaveFields');
+    
+    function toggleFields() {
+        if (operationSelect.value === 'set_leave') {
+            breakFields.style.display = 'none';
+            leaveFields.style.display = 'block';
+        } else {
+            breakFields.style.display = 'block';
+            leaveFields.style.display = 'none';
+        }
+    }
+    
+    operationSelect.addEventListener('change', toggleFields);
+    toggleFields(); // Initialize on page load
+});
+
+function toggleAllUsers(selectAllCheckbox) {
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    userCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    updateSelectedUsers();
+}
+
+function selectAllUsers() {
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    userCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    document.getElementById('selectAll').checked = true;
+    updateSelectedUsers();
+}
+
+function clearSelection() {
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    userCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAll').checked = false;
+    updateSelectedUsers();
+}
+
+function updateSelectedUsers() {
+    const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+    const usersField = document.querySelector('#id_users');
+    if (usersField) {
+        // Update the select field to reflect selected users
+        Array.from(usersField.options).forEach(option => {
+            option.selected = selectedUsers.includes(option.value);
+        });
+    }
+}
+
+// Add event listeners to individual checkboxes
+document.addEventListener('DOMContentLoaded', function() {
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    userCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedUsers);
+    });
+});
+</script>
+{% endblock %}

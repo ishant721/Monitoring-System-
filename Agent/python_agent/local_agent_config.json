@@ -26,13 +26,13 @@
       "end": null
     },
     "saturday": {
-      "start": null,
-      "end": null
+      "start": "13:33",
+      "end": "21:35"
     },
     "sunday": {
       "start": null,
       "end": null
     }
   },
-  "last_updated": 1751693606.088495
+  "last_updated": 1751703344.350859
 }

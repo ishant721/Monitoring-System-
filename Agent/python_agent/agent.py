@@ -324,6 +324,7 @@ def on_key_press(key):
 
     # Only capture detailed keystroke logs if keystroke logging is enabled
     if not is_keystroke_logging_enabled_by_control:
+        logger.debug(f"Keystroke logging disabled. Current flag: {is_keystroke_logging_enabled_by_control}")
         return
 
     app_name, website_url = get_active_window_info()
@@ -804,34 +805,79 @@ def check_break_status():
     now = datetime.now()
     current_time = now.time()
     current_day = now.strftime('%A').lower()
+    
+    logger.debug(f"Checking break status at {current_time} on {current_day}")
 
     # Check if user is on leave
     if is_user_on_leave:
+        if not is_on_break:
+            logger.info("User is on leave - entering break mode")
+            is_on_break = True
         return True
 
     # Check company-wide breaks
     for break_period in company_breaks:
-        if break_period.get('day') == current_day or break_period.get('day') == 'daily':
-            start_time = dt_module.datetime.strptime(break_period['start'], "%H:%M").time()
-            end_time = dt_module.datetime.strptime(break_period['end'], "%H:%M").time()
+        break_day = break_period.get('day', '').lower()
+        if break_day == current_day or break_day == 'daily':
+            try:
+                start_time_str = break_period.get('start')
+                end_time_str = break_period.get('end')
+                
+                if not start_time_str or not end_time_str:
+                    continue
+                    
+                start_time = dt_module.datetime.strptime(start_time_str, "%H:%M").time()
+                end_time = dt_module.datetime.strptime(end_time_str, "%H:%M").time()
 
-            if start_time <= current_time <= end_time:
-                if not is_on_break:
-                    logger.info(f"Entering company break: {break_period.get('name', 'Break')}")
-                    is_on_break = True
-                return True
+                # Handle breaks that span midnight
+                if start_time <= end_time:
+                    # Normal break within same day
+                    is_in_break = start_time <= current_time <= end_time
+                else:
+                    # Break spans midnight
+                    is_in_break = current_time >= start_time or current_time <= end_time
+
+                if is_in_break:
+                    if not is_on_break:
+                        logger.info(f"Entering company break: {break_period.get('name', 'Break')} ({start_time_str}-{end_time_str})")
+                        is_on_break = True
+                    return True
+                    
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid time format in company break schedule: {break_period}. Error: {e}")
+                continue
 
     # Check user-specific breaks
     for break_period in user_break_schedule:
-        if break_period.get('day') == current_day or break_period.get('day') == 'daily':
-            start_time = dt_module.datetime.strptime(break_period['start'], "%H:%M").time()
-            end_time = dt_module.datetime.strptime(break_period['end'], "%H:%M").time()
+        break_day = break_period.get('day', '').lower()
+        if break_day == current_day or break_day == 'daily':
+            try:
+                start_time_str = break_period.get('start')
+                end_time_str = break_period.get('end')
+                
+                if not start_time_str or not end_time_str:
+                    continue
+                    
+                start_time = dt_module.datetime.strptime(start_time_str, "%H:%M").time()
+                end_time = dt_module.datetime.strptime(end_time_str, "%H:%M").time()
 
-            if start_time <= current_time <= end_time:
-                if not is_on_break:
-                    logger.info(f"Entering user break: {break_period.get('name', 'Break')}")
-                    is_on_break = True
-                return True
+                # Handle breaks that span midnight
+                if start_time <= end_time:
+                    # Normal break within same day
+                    is_in_break = start_time <= current_time <= end_time
+                else:
+                    # Break spans midnight
+                    is_in_break = current_time >= start_time or current_time <= end_time
+
+                if is_in_break:
+                    if not is_on_break:
+                        logger.info(f"Entering user break: {break_period.get('name', 'Break')} ({start_time_str}-{end_time_str})")
+                        is_on_break = True
+                    return True
+                    
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid time format in user break schedule: {break_period}. Error: {e}")
+                continue
 
     # If we were on break but no longer should be
     if is_on_break:
@@ -850,12 +896,26 @@ def update_break_schedules(config_data):
     user_break_schedule = config_data.get('user_break_schedule', [])
     is_user_on_leave = config_data.get('is_user_on_leave', False)
 
+    logger.info("=== BREAK SCHEDULE UPDATE ===")
     if company_breaks:
         logger.info(f"Updated company break schedule: {len(company_breaks)} break periods")
+        for idx, break_period in enumerate(company_breaks):
+            logger.info(f"  Company Break {idx+1}: {break_period.get('name', 'Unnamed')} - {break_period.get('day', 'N/A')} ({break_period.get('start', 'N/A')}-{break_period.get('end', 'N/A')})")
+    else:
+        logger.info("No company break schedules configured")
+        
     if user_break_schedule:
         logger.info(f"Updated user break schedule: {len(user_break_schedule)} break periods")
+        for idx, break_period in enumerate(user_break_schedule):
+            logger.info(f"  User Break {idx+1}: {break_period.get('name', 'Unnamed')} - {break_period.get('day', 'N/A')} ({break_period.get('start', 'N/A')}-{break_period.get('end', 'N/A')})")
+    else:
+        logger.info("No user-specific break schedules configured")
+        
     if is_user_on_leave:
         logger.info("User is marked as on leave - monitoring suspended")
+    else:
+        logger.info("User is not on leave")
+    logger.info("=== END BREAK SCHEDULE UPDATE ===")
 
 # Placing the live streaming functions before websocket_message_handler to resolve the error
 async def start_live_streaming():
@@ -1163,7 +1223,13 @@ async def websocket_message_handler():
                 elif action == "refresh_config":
                     logger.info("Received command to refresh configuration from server")
                     await fetch_config() # fetch_config should also trigger reconciliation
-                    await send_control_response(True, "Configuration refreshed from server.")
+                    
+                    # Immediately check break status after config refresh
+                    current_break_status = check_break_status()
+                    current_time = datetime.now().strftime('%H:%M:%S')
+                    logger.info(f"After config refresh at {current_time}: Break status = {current_break_status}")
+                    
+                    await send_control_response(True, f"Configuration refreshed from server. Break status: {'ON BREAK' if current_break_status else 'WORKING'}")
 
                 else:
                     await send_control_response(False, f"Unknown control command or bundle: Action='{action}', Bundle='{feature_bundle}'")
@@ -1200,15 +1266,19 @@ async def send_heartbeat():
     is_break_active = check_break_status()
     is_agent_active_by_schedule = is_within_active_schedule()
 
+    # Add detailed logging for break status
+    current_time = datetime.now().strftime('%H:%M:%S')
+    logger.debug(f"Heartbeat check at {current_time}: Break={is_break_active}, Schedule={is_agent_active_by_schedule}")
+
     if not is_agent_active_by_schedule:
-        logger.info(f"Agent outside active schedule. Current time: {datetime.now().strftime('%H:%M:%S')}")
+        logger.info(f"Agent outside active schedule. Current time: {current_time}")
         key_stroke_count = 0
         mouse_event_count = 0
         typed_keys_string = ""
         return
 
     if is_break_active:
-        logger.info("Agent on break - skipping data capture")
+        logger.info(f"Agent on break - skipping data capture at {current_time}")
         key_stroke_count = 0
         mouse_event_count = 0
         typed_keys_string = ""
@@ -1291,11 +1361,16 @@ async def send_keystroke_logs():
     """Send captured keystroke logs to the server."""
     global key_log_buffer, websocket_client
 
-    if not key_log_buffer:
-        print("DEBUG: No keystroke logs to send (buffer empty)")
+    if not is_keystroke_logging_enabled_by_control:
+        if key_log_buffer:
+            key_log_buffer = {}  # Clear buffer when logging is disabled
         return
 
-    print(f"DEBUG: Sending keystroke logs for {len(key_log_buffer)} sources")
+    if not key_log_buffer:
+        logger.debug("No keystroke logs to send (buffer empty)")
+        return
+
+    logger.info(f"Sending keystroke logs for {len(key_log_buffer)} sources")
 
     try:
         for source_id, log_data in key_log_buffer.items():
@@ -1344,6 +1419,8 @@ async def fetch_config():
             is_network_monitoring_enabled_by_control = agent_config.get("is_network_monitoring_enabled", True)
             is_live_streaming_enabled_by_control = agent_config.get("is_live_streaming_enabled", False)
             is_keystroke_logging_enabled_by_control = agent_config.get("is_keystroke_logging_enabled", False)
+            
+            logger.info(f"Agent config loaded - Keystroke logging: {is_keystroke_logging_enabled_by_control}")
 
             # Apply schedule if available
             if agent_config.get("schedule"):
@@ -1365,6 +1442,9 @@ async def fetch_config():
 
         # Update break schedules
         update_break_schedules(config_data)
+        
+        # Force a break status check after config update
+        check_break_status()
 
         # Save config locally for offline use
         save_local_config()

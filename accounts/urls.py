@@ -32,6 +32,16 @@ urlpatterns = [
 
     # --- User Creation by Admins/Superadmins ---
     path('superadmin/add-admin/', views.superadmin_add_admin_view, name='superadmin_add_admin'),
+
+    # Break Schedule Management (Admin only)
+    path('manage-break-schedules/', views.manage_break_schedules_view, name='manage_break_schedules'),
+    path('break-overview/', views.break_overview_view, name='break_overview'),
+    path('bulk-break-management/', views.bulk_break_management_view, name='bulk_break_management'),
+    path('edit-company-break/<int:break_id>/', views.edit_company_break_view, name='edit_company_break'),
+    path('delete-company-break/<int:break_id>/', views.delete_company_break_view, name='delete_company_break'),
+    path('edit-user-break/<int:break_id>/', views.edit_user_break_view, name='edit_user_break'),
+    path('delete-user-break/<int:break_id>/', views.delete_user_break_view, name='delete_user_break'),
+
     path('admin/add-user/', views.admin_add_user_view, name='admin_add_user'),
 
     # --- User Status Management by Admins ---

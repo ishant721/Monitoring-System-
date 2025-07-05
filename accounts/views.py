@@ -1017,11 +1017,10 @@ def manage_break_schedules_view(request):
     from .forms import CompanyBreakScheduleForm, UserBreakScheduleForm
     from .models import CompanyBreakSchedule, UserBreakSchedule
 
-    # Get or create company break schedule
-    company_schedule, created = CompanyBreakSchedule.objects.get_or_create(
-        admin=request.user,
-        defaults={'is_active': False}
-    )
+    # Get all company break schedules for this admin
+    company_schedules = CompanyBreakSchedule.objects.filter(
+        admin=request.user
+    ).order_by('day', 'start_time')
 
     # Get all user break schedules for this admin's users
     managed_users = CustomUser.objects.filter(
@@ -1030,16 +1029,37 @@ def manage_break_schedules_view(request):
     )
     users_with_breaks = UserBreakSchedule.objects.filter(
         user__in=managed_users
-    ).select_related('user')
+    ).select_related('user').order_by('user__email', 'day', 'start_time')
 
     if request.method == 'POST':
         form_type = request.POST.get('form_type')
 
         if form_type == 'company':
-            company_form = CompanyBreakScheduleForm(request.POST, instance=company_schedule)
+            company_form = CompanyBreakScheduleForm(request.POST)
             if company_form.is_valid():
-                company_form.save()
-                messages.success(request, 'Company break schedule updated successfully.')
+                break_schedule = company_form.save(commit=False)
+                break_schedule.admin = request.user
+                break_schedule.save()
+
+                # Notify all agents to refresh their configuration
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+
+                channel_layer = get_channel_layer()
+                for user in managed_users:
+                    for agent in user.agents.all():
+                        async_to_sync(channel_layer.group_send)(
+                            f"agent_{agent.agent_id}",
+                            {
+                                "type": "control_command",
+                                "command": {
+                                    "type": "control",
+                                    "action": "refresh_config"
+                                }
+                            }
+                        )
+
+                messages.success(request, 'Company break schedule added successfully. Agents have been notified.')
                 return redirect('accounts:manage_break_schedules')
 
         elif form_type == 'user':
@@ -1064,14 +1084,25 @@ def manage_break_schedules_view(request):
             except UserBreakSchedule.DoesNotExist:
                 messages.error(request, 'Break schedule not found.')
 
-    company_form = CompanyBreakScheduleForm(instance=company_schedule)
+    company_form = CompanyBreakScheduleForm()
     user_form = UserBreakScheduleForm(admin=request.user)
+
+    # Generate JWT token for API access
+    access_token = None
+    try:
+        from rest_framework_simplejwt.tokens import RefreshToken
+        refresh = RefreshToken.for_user(request.user)
+        access_token = str(refresh.access_token)
+    except Exception as e:
+        print(f"Could not generate access token for user {request.user.email}: {e}")
 
     context = {
         'company_form': company_form,
         'user_form': user_form,
         'users_with_breaks': users_with_breaks,
-        'company_schedule': company_schedule,
+        'company_schedules': company_schedules,
+        'managed_users': managed_users,
+        'access_token': access_token,
     }
 
     return render(request, 'accounts/manage_break_schedules.html', context)
@@ -1260,3 +1291,196 @@ def user_download_agent_view(request):
         'pairing_token': user.agent_pairing_token,
     }
     return render(request, 'accounts/download_agent.html', context)
+
+
+@login_required
+@admin_required
+def break_overview_view(request):
+    """
+    Overview of all break schedules and current status.
+    """
+    from .models import UserBreakSchedule
+
+    # Get all managed users
+    managed_users = CustomUser.objects.filter(
+        company_admin=request.user, 
+        role=CustomUser.USER
+    )
+
+    # Get users currently on break
+    current_time = timezone.now().time()
+    current_day = timezone.now().strftime('%A').lower()
+
+    users_on_break = UserBreakSchedule.objects.filter(
+        user__in=managed_users,
+        is_active=True,
+        day=current_day,
+        start_time__lte=current_time,
+        end_time__gte=current_time
+    ).exclude(is_on_leave=True)
+
+    # Get users on leave
+    users_on_leave = UserBreakSchedule.objects.filter(
+        user__in=managed_users,
+        is_active=True,
+        is_on_leave=True
+    )
+
+    # Calculate users currently working
+    users_on_break_ids = list(users_on_break.values_list('user_id', flat=True))
+    users_on_leave_ids = list(users_on_leave.values_list('user_id', flat=True))
+    excluded_user_ids = set(users_on_break_ids + users_on_leave_ids)
+    users_working_count = managed_users.exclude(id__in=excluded_user_ids).count()
+
+    context = {
+        'total_managed_users': managed_users.count(),
+        'users_on_break': users_on_break,
+        'users_on_leave': users_on_leave,
+        'users_working_count': users_working_count,
+        'all_users': managed_users,
+    }
+
+    return render(request, 'accounts/break_overview.html', context)
+
+@login_required
+@admin_required
+def bulk_break_management_view(request):
+    """
+    Bulk operations for break schedules - apply breaks to multiple users at once.
+    """
+    from .forms import BulkBreakScheduleForm
+    from .models import UserBreakSchedule
+
+    managed_users = CustomUser.objects.filter(
+        company_admin=request.user, 
+        role=CustomUser.USER,
+        is_active=True
+    )
+
+    if request.method == 'POST':
+        form = BulkBreakScheduleForm(request.POST, admin=request.user)
+        if form.is_valid():
+            selected_users = form.cleaned_data['users']
+            operation = form.cleaned_data['operation']
+
+            if operation == 'add_break':
+                # Add break schedule to selected users
+                for user in selected_users:
+                    UserBreakSchedule.objects.create(
+                        user=user,
+                        name=form.cleaned_data['name'],
+                        day=form.cleaned_data['day'],
+                        start_time=form.cleaned_data['start_time'],
+                        end_time=form.cleaned_data['end_time'],
+                        is_active=True
+                    )
+                messages.success(request, f'Break schedule added to {selected_users.count()} users.')
+
+            elif operation == 'set_leave':
+                # Set leave status for selected users
+                for user in selected_users:
+                    UserBreakSchedule.objects.create(
+                        user=user,
+                        name=form.cleaned_data['leave_name'] or 'Leave',
+                        is_on_leave=True,
+                        leave_start_date=form.cleaned_data['leave_start_date'],
+                        leave_end_date=form.cleaned_data['leave_end_date'],
+                        leave_reason=form.cleaned_data['leave_reason'],
+                        is_active=True
+                    )
+                messages.success(request, f'Leave status set for {selected_users.count()} users.')
+
+            return redirect('accounts:bulk_break_management')
+    else:
+        form = BulkBreakScheduleForm(admin=request.user)
+
+    context = {
+        'form': form,
+        'managed_users': managed_users,
+    }
+
+    return render(request, 'accounts/bulk_break_management.html', context)
+
+
+
+
+@login_required
+@admin_required
+def edit_company_break_view(request, break_id):
+    """
+    Edit a company-wide break schedule.
+    """
+    from .forms import CompanyBreakScheduleForm
+    from .models import CompanyBreakSchedule
+
+    break_schedule = get_object_or_404(
+        CompanyBreakSchedule, 
+        id=break_id, 
+        admin=request.user
+    )
+
+    if request.method == 'POST':
+        form = CompanyBreakScheduleForm(request.POST, instance=break_schedule)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Company break schedule "{break_schedule.name}" updated successfully.')
+            return redirect('accounts:break_overview')
+    else:
+        form = CompanyBreakScheduleForm(instance=break_schedule)
+
+    context = {
+        'form': form,
+        'break_schedule': break_schedule,
+        'title': f'Edit Company Break: {break_schedule.name}'
+    }
+    return render(request, 'accounts/edit_company_break.html', context)
+
+@login_required
+@admin_required
+def delete_company_break_view(request, break_id):
+    """
+    Delete a company-wide break schedule.
+    """
+    from .models import CompanyBreakSchedule
+
+    break_schedule = get_object_or_404(
+        CompanyBreakSchedule, 
+        id=break_id, 
+        admin=request.user
+    )
+
+    break_name = break_schedule.name
+    break_schedule.delete()
+    messages.success(request, f'Company break schedule "{break_name}" deleted successfully.')
+    return redirect('accounts:break_overview')
+
+@login_required
+@admin_required
+def edit_user_break_view(request, break_id):
+    """
+    Edit a user-specific break schedule.
+    """
+    from .forms import UserBreakScheduleForm
+    from .models import UserBreakSchedule
+
+    break_schedule = get_object_or_404(
+        UserBreakSchedule, 
+        id=break_id, 
+        user__company_admin=request.user
+    )
+
+    if request.method == 'POST':
+        form = UserBreakScheduleForm(request.POST, instance=break_schedule, admin=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'User break schedule for {break_schedule.user.get_full_name()} updated successfully.')
+            return redirect('accounts:break_overview')
+    else:
+        form = UserBreakScheduleForm(instance=break_schedule, admin=request.user)
+
+    context = {
+        'form': form,
+        'break_schedule': break_schedule,
+        'title': f'Edit Break for {break_schedule.user.get_full_name()}'
+    }
+    return render(request, 'accounts/edit_user_break.html', context)

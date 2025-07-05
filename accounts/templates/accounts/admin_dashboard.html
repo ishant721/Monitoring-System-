@@ -289,4 +289,24 @@
         </div>
     </div>
 </div>
+
+            <!-- Break Management Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-info h-100">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>Break Management
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Configure company-wide and user-specific break schedules.</p>
+                        <a href="{% url 'accounts:manage_break_schedules' %}" class="btn btn-info btn-sm">
+                            <i class="fas fa-calendar-alt me-1"></i>Manage Schedules
+                        </a>
+                        <a href="{% url 'accounts:break_overview' %}" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-chart-line me-1"></i>Overview
+                        </a>
+                    </div>
+                </div>
+            </div>
 {% endblock %}
