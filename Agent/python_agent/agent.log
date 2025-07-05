@@ -160,3 +160,177 @@
 2025-07-05 13:45:44,350 - INFO - Reconciling agent state with new global configuration...
 2025-07-05 13:45:44,350 - INFO - Live stream correctly running as per config
 2025-07-05 13:46:00,864 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:46:11,244 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:46:21,633 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:46:32,017 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:46:42,434 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:46:52,996 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:47:03,573 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:47:14,210 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:47:24,820 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:47:35,475 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:47:46,217 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:47:56,864 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:48:07,410 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:48:17,804 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:48:28,374 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:48:38,973 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:48:49,543 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:49:00,072 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:49:10,703 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:49:21,264 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:49:31,287 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: True, Keystroke: False
+2025-07-05 13:49:31,287 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 13:49:31,287 - INFO - No company break schedules configured
+2025-07-05 13:49:31,287 - INFO - No user-specific break schedules configured
+2025-07-05 13:49:31,287 - INFO - User is not on leave
+2025-07-05 13:49:31,287 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 13:49:31,859 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:49:42,449 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:49:53,035 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:50:03,608 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:50:14,190 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:50:24,764 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:50:35,334 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:50:45,881 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:50:56,471 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:51:07,042 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:51:17,615 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:51:28,199 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:51:38,787 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:51:49,367 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:51:59,989 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:52:10,530 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:52:21,154 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:52:31,780 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:52:42,463 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:52:53,059 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:53:03,679 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:53:14,301 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:53:24,824 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:53:35,349 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:53:45,896 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:53:56,542 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:54:07,146 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:54:17,739 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:54:28,192 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:54:38,197 - ERROR - Error fetching config from server: HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /api/config/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x112edd480>: Failed to establish a new connection: [Errno 61] Connection refused'))
+2025-07-05 13:54:38,615 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:54:49,086 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:54:59,677 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:55:10,119 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:55:20,701 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:55:31,128 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:55:41,553 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:55:52,147 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:56:02,598 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:56:13,217 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:56:23,823 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:56:34,456 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:56:45,039 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:56:55,448 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:57:06,060 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:57:16,647 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:57:27,080 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:57:37,519 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:57:48,105 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:57:58,774 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:58:09,364 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:58:19,966 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:58:30,418 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:58:41,016 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:58:51,457 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:59:01,892 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:59:12,474 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:59:23,083 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:59:33,715 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:59:43,721 - ERROR - Error fetching config from server: HTTPConnectionPool(host='127.0.0.1', port=8000): Max retries exceeded with url: /api/config/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11643f770>: Failed to establish a new connection: [Errno 61] Connection refused'))
+2025-07-05 13:59:44,347 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 13:59:54,953 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:00:05,569 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:00:16,154 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:00:26,613 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:00:37,250 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:00:47,858 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:00:58,455 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:01:09,057 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:01:19,716 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:01:30,314 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:01:40,762 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:01:51,198 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:02:01,652 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:02:12,046 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:02:22,728 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:02:33,313 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:02:43,888 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:02:54,487 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:03:05,064 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:03:15,506 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:03:26,089 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:03:36,501 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:03:47,102 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:03:57,604 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:04:08,036 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:04:09,855 - INFO - Agent stopped by user
+2025-07-05 14:04:09,855 - INFO - Agent process terminated
+2025-07-05 14:04:11,015 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:04:11,025 - ERROR - Error fetching config from server: 401 Client Error: Unauthorized for url: http://127.0.0.1:8000/api/config/
+2025-07-05 14:09:17,327 - ERROR - Error fetching config from server: 401 Client Error: Unauthorized for url: http://127.0.0.1:8000/api/config/
+2025-07-05 14:09:49,433 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:09:59,855 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:10:10,266 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:10:13,342 - INFO - Agent stopped by user
+2025-07-05 14:10:13,343 - INFO - Agent process terminated
+2025-07-05 14:10:15,051 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:10:15,051 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 14:10:15,052 - ERROR - Error fetching config from server: name 'aiohttp' is not defined
+2025-07-05 14:13:48,092 - INFO - Agent stopped by user
+2025-07-05 14:13:48,093 - INFO - Agent process terminated
+2025-07-05 14:14:33,865 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:14:33,865 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 14:14:33,868 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:16:08,385 - INFO - Agent stopped by user
+2025-07-05 14:16:08,386 - INFO - Agent process terminated
+2025-07-05 14:16:09,824 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:16:09,824 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:16:09,827 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:17:45,824 - INFO - Agent stopped by user
+2025-07-05 14:17:45,824 - INFO - Agent process terminated
+2025-07-05 14:17:47,541 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:17:47,550 - INFO - Fetching initial configuration from server...
+2025-07-05 14:17:47,550 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:17:47,557 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:21:53,996 - INFO - Agent stopped by user
+2025-07-05 14:21:53,997 - INFO - Agent process terminated
+2025-07-05 14:21:55,715 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:21:55,725 - INFO - Fetching initial configuration from server...
+2025-07-05 14:21:55,726 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:21:55,730 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:22:47,611 - INFO - Agent stopped by user
+2025-07-05 14:22:47,613 - INFO - Agent process terminated
+2025-07-05 14:22:49,281 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:22:49,291 - INFO - Fetching initial configuration from server...
+2025-07-05 14:22:49,291 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:22:49,296 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:25:16,998 - INFO - Agent stopped by user
+2025-07-05 14:25:16,999 - INFO - Agent process terminated
+2025-07-05 14:25:18,361 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:25:18,375 - INFO - Fetching initial configuration from server...
+2025-07-05 14:25:18,375 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:25:18,384 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:27:01,721 - INFO - Agent stopped by user
+2025-07-05 14:27:01,722 - INFO - Agent process terminated
+2025-07-05 14:27:03,179 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:27:03,188 - INFO - Fetching initial configuration from server...
+2025-07-05 14:27:03,188 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:27:03,194 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:28:11,224 - INFO - Agent stopped by user
+2025-07-05 14:28:11,225 - INFO - Agent process terminated
+2025-07-05 14:28:13,095 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 14:28:13,107 - INFO - Fetching initial configuration from server...
+2025-07-05 14:28:13,107 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:28:13,113 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:53:55,572 - INFO - Fetching config from: http://127.0.0.1:8000/api/config/
+2025-07-05 14:53:55,598 - ERROR - Error fetching config: 401 - {"detail":"Authentication credentials were not provided."}
+2025-07-05 14:54:08,125 - WARNING - WebSocket not connected. Cannot send heartbeat.
+2025-07-05 14:54:18,581 - WARNING - WebSocket not connected. Cannot send heartbeat.

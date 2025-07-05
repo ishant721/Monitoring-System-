@@ -34,3 +34,13 @@ class IsOwnerOfAgent(BasePermission):
 
         # If none of the above, deny permission.
         return False
+
+
+class AgentPermission(BasePermission):
+    """
+    Permission class for agent API endpoints.
+    Allows access if the request is authenticated via AgentAPIKeyAuthentication.
+    """
+    def has_permission(self, request, view):
+        # Allow access if agent_id is present in request (set by AgentAPIKeyAuthentication)
+        return hasattr(request, 'agent_id') and request.agent_id is not None

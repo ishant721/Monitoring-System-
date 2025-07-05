@@ -22,6 +22,7 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.parsers import MultiPartParser, FormParser
+import logging
 
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
@@ -29,6 +30,7 @@ from asgiref.sync import async_to_sync
 from ..models import Agent, AgentData, RecordedVideo, KeyLog
 from accounts.models import CustomUser
 from ..authentication import AgentAPIKeyAuthentication
+from ..permissions import AgentPermission
 
 
 # ==============================================================================
@@ -192,6 +194,13 @@ def agent_status_api_view(request):
     (Corrected) Returns a list of all agents and their live status, optimized
     to prevent N+1 query issues.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # Debug authentication
+    logger.info(f"Agent status request - User: {request.user}, Authenticated: {request.user.is_authenticated}")
+    logger.info(f"Authorization header: {request.META.get('HTTP_AUTHORIZATION', 'Not present')}")
+    
     user = request.user
     agents_qs = Agent.objects.none()
 
@@ -745,3 +754,195 @@ def admin_control_agents_api(request):
             'success': False,
             'message': str(e)
         })
+
+
+@api_view(['POST'])
+@authentication_classes([AgentAPIKeyAuthentication])
+@permission_classes([])
+def receive_heartbeat(request):
+    """
+    Receives heartbeat data from agents and updates their status.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        agent_id = getattr(request, 'agent_id', None)
+        if not agent_id:
+            return Response({"error": "Agent ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        logger.debug(f"Received heartbeat from agent {agent_id}")
+
+        # Get or create agent
+        try:
+            agent = Agent.objects.get(agent_id=agent_id)
+        except Agent.DoesNotExist:
+            logger.error(f"Agent {agent_id} not found")
+            return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update agent status
+        agent.last_seen = timezone.now()
+        agent.window_title = data.get('window_title', '')
+        agent.active_browser_url = data.get('active_browser_url', '')
+        agent.is_recording = data.get('is_recording', False)
+        agent.save()
+
+        # Create AgentData entry if screenshot or activity data is present
+        if data.get('screenshot') or data.get('keystroke_count', 0) > 0:
+            agent_data = AgentData.objects.create(
+                agent_id=agent_id,
+                window_title=data.get('window_title', ''),
+                active_browser_url=data.get('active_browser_url', ''),
+                keystroke_count=data.get('keystroke_count', 0),
+                mouse_event_count=data.get('mouse_event_count', 0),
+                upload_bytes=data.get('upload_bytes', 0),
+                download_bytes=data.get('download_bytes', 0),
+                network_type=data.get('network_type', ''),
+                productive_status=data.get('productive_status', 'unknown'),
+                is_activity_monitoring_enabled=data.get('is_activity_monitoring_enabled', True),
+                is_network_monitoring_enabled=data.get('is_network_monitoring_enabled', True),
+                capture_interval_seconds=data.get('current_interval_seconds', 30)
+            )
+
+            # Handle screenshot if present
+            if data.get('screenshot'):
+                import base64
+                from django.core.files.base import ContentFile
+                try:
+                    screenshot_data = base64.b64decode(data['screenshot'])
+                    screenshot_file = ContentFile(screenshot_data, name=f'screenshot_{agent_id}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.png')
+                    agent_data.screenshot.save(screenshot_file.name, screenshot_file)
+                except Exception as e:
+                    logger.error(f"Error saving screenshot: {e}")
+
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error processing heartbeat: {e}")
+        return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@authentication_classes([AgentAPIKeyAuthentication])
+@permission_classes([])
+def upload_recording(request):
+    """
+    Handles video recording uploads from agents.
+    """
+    return RecordingUploadAPIView().post(request)
+
+
+@api_view(['POST'])
+@authentication_classes([AgentAPIKeyAuthentication])
+@permission_classes([])
+def receive_keylog(request):
+    """
+    Receives keystroke log data from agents.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    try:
+        agent_id = getattr(request, 'agent_id', None)
+        if not agent_id:
+            return Response({"error": "Agent ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        
+        # Get agent
+        try:
+            agent = Agent.objects.get(agent_id=agent_id)
+        except Agent.DoesNotExist:
+            return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create keylog entry
+        KeyLog.objects.create(
+            agent=agent,
+            source_app=data.get('source_app', 'Unknown'),
+            key_sequence=data.get('key_sequence', ''),
+            is_messaging_log=data.get('is_messaging', False)
+        )
+
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error processing keylog: {e}")
+        return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def test_auth(request):
+    """
+    Simple endpoint to test JWT authentication
+    """
+    return Response({
+        "message": "Authentication successful",
+        "user": request.user.email,
+        "user_id": request.user.id
+    })
+
+
+@api_view(['GET'])
+@authentication_classes([AgentAPIKeyAuthentication])
+@permission_classes([AgentPermission])
+def get_break_schedules(request):
+    """
+    API endpoint for agents to fetch break schedules for their user.
+    """
+    try:
+        agent = Agent.objects.get(agent_id=request.headers.get('X-AGENT-ID'))
+        if not agent.user:
+            return Response({"error": "Agent not paired with user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get company break schedules
+        company_breaks = []
+        if hasattr(agent.user, 'company_admin') and agent.user.company_admin:
+            from accounts.models import CompanyBreakSchedule
+            company_schedules = CompanyBreakSchedule.objects.filter(
+                admin=agent.user.company_admin,
+                is_active=True
+            )
+            for schedule in company_schedules:
+                company_breaks.append({
+                    'name': schedule.name,
+                    'day': schedule.day,
+                    'start_time': schedule.start_time.strftime('%H:%M'),
+                    'end_time': schedule.end_time.strftime('%H:%M'),
+                })
+
+        # Get user-specific break schedules
+        user_breaks = []
+        from accounts.models import UserBreakSchedule
+        user_schedules = UserBreakSchedule.objects.filter(
+            user=agent.user,
+            is_active=True
+        )
+
+        # Check if user is on leave
+        is_user_on_leave = user_schedules.filter(is_on_leave=True).exists()
+
+        for schedule in user_schedules:
+            if schedule.is_on_leave:
+                continue  # Handle leave status separately
+
+            user_breaks.append({
+                'name': schedule.name,
+                'day': schedule.day,
+                'start_time': schedule.start_time.strftime('%H:%M') if schedule.start_time else None,
+                'end_time': schedule.end_time.strftime('%H:%M') if schedule.end_time else None,
+            })
+
+        return Response({
+            'company_breaks': company_breaks,
+            'user_break_schedule': user_breaks,
+            'is_user_on_leave': is_user_on_leave
+        })
+
+    except Agent.DoesNotExist:
+        return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Error fetching break schedules: {e}")
+        return Response({"error": "Internal server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

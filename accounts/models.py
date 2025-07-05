@@ -57,7 +57,7 @@ class UserBreakSchedule(models.Model):
     user = models.ForeignKey(
         'CustomUser', 
         on_delete=models.CASCADE, 
-        related_name='user_break_schedules',
+        related_name='break_schedules',
         limit_choices_to={'role': 'USER'}
     )
     name = models.CharField(max_length=100, help_text="Break name (e.g., 'Personal Break', 'Medical Appointment')")

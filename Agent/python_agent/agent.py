@@ -14,6 +14,7 @@ import re
 import requests
 import tempfile
 import logging
+import aiohttp
 from datetime import datetime, time as dt_time
 import datetime as dt_module
 
@@ -108,9 +109,9 @@ current_schedule = {
 }
 
 # --- Global configuration variables ---
-BACKEND_URL = ""
-API_KEY = ""
-AGENT_ID = ""
+BACKEND_URL = config.get('Agent', 'BACKEND_URL', fallback='http://0.0.0.0:8000')
+API_KEY = config.get('Agent', 'API_KEY', fallback='')
+AGENT_ID = config.get('Agent', 'AGENT_ID', fallback='')
 
 # --- Break Management Variables ---
 is_on_break = False
@@ -799,20 +800,26 @@ def is_within_active_schedule():
 def check_break_status():
     """
     Checks if the agent should be on break based on company and user break schedules.
+    Also stops all monitoring activities when on break.
     """
     global is_on_break, is_user_on_leave, company_breaks, user_break_schedule
+    global is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control
+    global is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control
 
     now = datetime.now()
     current_time = now.time()
     current_day = now.strftime('%A').lower()
-    
+
     logger.debug(f"Checking break status at {current_time} on {current_day}")
+
+    was_on_break = is_on_break
 
     # Check if user is on leave
     if is_user_on_leave:
         if not is_on_break:
             logger.info("User is on leave - entering break mode")
             is_on_break = True
+            _stop_all_monitoring_activities("User is on leave")
         return True
 
     # Check company-wide breaks
@@ -820,14 +827,22 @@ def check_break_status():
         break_day = break_period.get('day', '').lower()
         if break_day == current_day or break_day == 'daily':
             try:
-                start_time_str = break_period.get('start')
-                end_time_str = break_period.get('end')
-                
+                start_time_str = break_period.get('start_time', break_period.get('start'))
+                end_time_str = break_period.get('end_time', break_period.get('end'))
+
                 if not start_time_str or not end_time_str:
                     continue
-                    
-                start_time = dt_module.datetime.strptime(start_time_str, "%H:%M").time()
-                end_time = dt_module.datetime.strptime(end_time_str, "%H:%M").time()
+
+                # Handle both time objects and string formats
+                if isinstance(start_time_str, str):
+                    start_time = dt_module.datetime.strptime(start_time_str, "%H:%M").time()
+                else:
+                    start_time = start_time_str
+
+                if isinstance(end_time_str, str):
+                    end_time = dt_module.datetime.strptime(end_time_str, "%H:%M").time()
+                else:
+                    end_time = end_time_str
 
                 # Handle breaks that span midnight
                 if start_time <= end_time:
@@ -839,27 +854,42 @@ def check_break_status():
 
                 if is_in_break:
                     if not is_on_break:
-                        logger.info(f"Entering company break: {break_period.get('name', 'Break')} ({start_time_str}-{end_time_str})")
+                        logger.info(f"Entering company break: {break_period.get('name', 'Break')} ({start_time}-{end_time})")
                         is_on_break = True
+                        _stop_all_monitoring_activities(f"Company break: {break_period.get('name', 'Break')}")
                     return True
-                    
+
             except (ValueError, TypeError) as e:
                 logger.warning(f"Invalid time format in company break schedule: {break_period}. Error: {e}")
                 continue
 
-    # Check user-specific breaks
+    # Check user-specific breaks for current day only
     for break_period in user_break_schedule:
         break_day = break_period.get('day', '').lower()
+        is_active = break_period.get('is_active', True)
+
+        if not is_active:
+            continue
+
+        # Only check breaks for current day or daily breaks
         if break_day == current_day or break_day == 'daily':
             try:
-                start_time_str = break_period.get('start')
-                end_time_str = break_period.get('end')
-                
+                start_time_str = break_period.get('start_time', break_period.get('start'))
+                end_time_str = break_period.get('end_time', break_period.get('end'))
+
                 if not start_time_str or not end_time_str:
                     continue
-                    
-                start_time = dt_module.datetime.strptime(start_time_str, "%H:%M").time()
-                end_time = dt_module.datetime.strptime(end_time_str, "%H:%M").time()
+
+                # Handle both time objects and string formats
+                if isinstance(start_time_str, str):
+                    start_time = dt_module.datetime.strptime(start_time_str, "%H:%M").time()
+                else:
+                    start_time = start_time_str
+
+                if isinstance(end_time_str, str):
+                    end_time = dt_module.datetime.strptime(end_time_str, "%H:%M").time()
+                else:
+                    end_time = end_time_str
 
                 # Handle breaks that span midnight
                 if start_time <= end_time:
@@ -871,20 +901,50 @@ def check_break_status():
 
                 if is_in_break:
                     if not is_on_break:
-                        logger.info(f"Entering user break: {break_period.get('name', 'Break')} ({start_time_str}-{end_time_str})")
+                        logger.info(f"Entering user break: {break_period.get('name', 'Break')} ({start_time}-{end_time})")
                         is_on_break = True
+                        _stop_all_monitoring_activities(f"User break: {break_period.get('name', 'Break')}")
                     return True
-                    
+
             except (ValueError, TypeError) as e:
                 logger.warning(f"Invalid time format in user break schedule: {break_period}. Error: {e}")
                 continue
 
     # If we were on break but no longer should be
-    if is_on_break:
+    if was_on_break and not is_on_break:
         logger.info("Break period ended, resuming monitoring")
         is_on_break = False
+        _resume_all_monitoring_activities()
 
     return False
+
+
+def _stop_all_monitoring_activities(reason):
+    """
+    Stops all monitoring activities when entering break mode.
+    """
+    global is_recording, live_streaming_task
+
+    logger.info(f"Stopping all monitoring activities: {reason}")
+
+    # Stop live streaming if active
+    if live_streaming_task and not live_streaming_task.done():
+        asyncio.create_task(stop_live_streaming())
+
+    # Stop recording if active
+    if is_recording:
+        asyncio.create_task(stop_recording())
+
+    logger.info("All monitoring activities stopped for break period")
+
+
+def _resume_all_monitoring_activities():
+    """
+    Resumes monitoring activities when break period ends.
+    """
+    logger.info("Break period ended - monitoring activities can resume based on configuration")
+    # Note: Activities will resume automatically based on their enabled flags
+    # No need to explicitly restart them here as the heartbeat loop handles this
 
 def update_break_schedules(config_data):
     """
@@ -903,14 +963,14 @@ def update_break_schedules(config_data):
             logger.info(f"  Company Break {idx+1}: {break_period.get('name', 'Unnamed')} - {break_period.get('day', 'N/A')} ({break_period.get('start', 'N/A')}-{break_period.get('end', 'N/A')})")
     else:
         logger.info("No company break schedules configured")
-        
+
     if user_break_schedule:
         logger.info(f"Updated user break schedule: {len(user_break_schedule)} break periods")
         for idx, break_period in enumerate(user_break_schedule):
             logger.info(f"  User Break {idx+1}: {break_period.get('name', 'Unnamed')} - {break_period.get('day', 'N/A')} ({break_period.get('start', 'N/A')}-{break_period.get('end', 'N/A')})")
     else:
         logger.info("No user-specific break schedules configured")
-        
+
     if is_user_on_leave:
         logger.info("User is marked as on leave - monitoring suspended")
     else:
@@ -1223,12 +1283,12 @@ async def websocket_message_handler():
                 elif action == "refresh_config":
                     logger.info("Received command to refresh configuration from server")
                     await fetch_config() # fetch_config should also trigger reconciliation
-                    
+
                     # Immediately check break status after config refresh
                     current_break_status = check_break_status()
                     current_time = datetime.now().strftime('%H:%M:%S')
                     logger.info(f"After config refresh at {current_time}: Break status = {current_break_status}")
-                    
+
                     await send_control_response(True, f"Configuration refreshed from server. Break status: {'ON BREAK' if current_break_status else 'WORKING'}")
 
                 else:
@@ -1270,20 +1330,78 @@ async def send_heartbeat():
     current_time = datetime.now().strftime('%H:%M:%S')
     logger.debug(f"Heartbeat check at {current_time}: Break={is_break_active}, Schedule={is_agent_active_by_schedule}")
 
+    # Always reset counters regardless of status
+    key_stroke_count = 0
+    mouse_event_count = 0
+    typed_keys_string = ""
+
     if not is_agent_active_by_schedule:
         logger.info(f"Agent outside active schedule. Current time: {current_time}")
-        key_stroke_count = 0
-        mouse_event_count = 0
-        typed_keys_string = ""
+        # Still send heartbeat to report status, but with minimal data
+        data = {
+            "type": "heartbeat",
+            "agent_id": AGENT_ID,
+            "window_title": None,
+            "active_browser_url": None,
+            "screenshot": None,
+            "keystroke_count": 0,
+            "mouse_event_count": 0,
+            "typed_keys": "",
+            "upload_bytes": 0,
+            "download_bytes": 0,
+            "network_type": None,
+            "is_recording": False,
+            "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
+            "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
+            "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
+            "is_keystroke_logging_enabled": is_keystroke_logging_enabled_by_control,
+            "productive_status": "Outside Schedule",
+            "current_interval_seconds": current_interval_ms / 1000,
+            "is_agent_active_by_schedule": is_agent_active_by_schedule,
+            "is_on_break": is_on_break,
+            "is_user_on_leave": is_user_on_leave
+        }
+        try:
+            if websocket_client and websocket_client.state == State.OPEN:
+                await websocket_client.send(json.dumps(data))
+        except Exception as e:
+            logger.error(f"Error sending schedule status: {e}")
         return
 
     if is_break_active:
-        logger.info(f"Agent on break - skipping data capture at {current_time}")
-        key_stroke_count = 0
-        mouse_event_count = 0
-        typed_keys_string = ""
+        logger.info(f"Agent on break - sending break status at {current_time}")
+        # Send heartbeat to report break status but with no monitoring data
+        data = {
+            "type": "heartbeat",
+            "agent_id": AGENT_ID,
+            "window_title": None,
+            "active_browser_url": None,
+            "screenshot": None,
+            "keystroke_count": 0,
+            "mouse_event_count": 0,
+            "typed_keys": "",
+            "upload_bytes": 0,
+            "download_bytes": 0,
+            "network_type": None,
+            "is_recording": False,
+            "is_activity_monitoring_enabled": is_activity_monitoring_enabled_by_control,
+            "is_network_monitoring_enabled": is_network_monitoring_enabled_by_control,
+            "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
+            "is_keystroke_logging_enabled": is_keystroke_logging_enabled_by_control,
+            "productive_status": "On Break",
+            "current_interval_seconds": current_interval_ms / 1000,
+            "is_agent_active_by_schedule": is_agent_active_by_schedule,
+            "is_on_break": is_on_break,
+            "is_user_on_leave": is_user_on_leave
+        }
+        try:
+            if websocket_client and websocket_client.state == State.OPEN:
+                await websocket_client.send(json.dumps(data))
+        except Exception as e:
+            logger.error(f"Error sending break status: {e}")
         return
 
+    # Normal monitoring when not on break and within schedule
     is_activity_monitoring_effective = is_activity_monitoring_enabled_by_control
     is_network_monitoring_effective = is_network_monitoring_enabled_by_control
 
@@ -1301,10 +1419,6 @@ async def send_heartbeat():
 
         # Always capture screenshots during active monitoring, even when recording
         screenshot_base64 = capture_screenshot_base64()
-    else:
-        key_stroke_count = 0
-        mouse_event_count = 0
-        typed_keys_string = ""
 
     if is_network_monitoring_effective:
         current_net = get_total_bandwidth_usage()
@@ -1315,8 +1429,6 @@ async def send_heartbeat():
         last_download_bytes = current_download
 
         network_type = get_network_type()
-    else:
-        upload_delta, download_delta = 0, 0
 
     data = {
         "type": "heartbeat",
@@ -1352,10 +1464,6 @@ async def send_heartbeat():
         websocket_client = None
     except Exception as e:
         logger.error(f"Error sending data: {e}")
-
-    key_stroke_count = 0
-    mouse_event_count = 0
-    typed_keys_string = ""
 
 async def send_keystroke_logs():
     """Send captured keystroke logs to the server."""
@@ -1401,64 +1509,48 @@ async def send_keystroke_logs():
         traceback.print_exc()
 
 async def fetch_config():
-    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control
-
+    """Fetch configuration from the server."""
+    global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control
+    global is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control, current_schedule
+    
     try:
-        headers = {"X-API-KEY": API_KEY, "X-AGENT-ID": AGENT_ID}
-        response = requests.get(f"{BACKEND_URL}/api/config/", headers=headers, timeout=10)
-        response.raise_for_status()
-        config_data = response.json()
-
-        # Apply agent-specific config first
-        agent_config = config_data.get("agent_config", {})
-        if agent_config:
-            new_interval_s = agent_config.get("capture_interval_seconds", 10)
-            current_interval_ms = new_interval_s * 1000
-
-            is_activity_monitoring_enabled_by_control = agent_config.get("is_activity_monitoring_enabled", True)
-            is_network_monitoring_enabled_by_control = agent_config.get("is_network_monitoring_enabled", True)
-            is_live_streaming_enabled_by_control = agent_config.get("is_live_streaming_enabled", False)
-            is_keystroke_logging_enabled_by_control = agent_config.get("is_keystroke_logging_enabled", False)
-            
-            logger.info(f"Agent config loaded - Keystroke logging: {is_keystroke_logging_enabled_by_control}")
-
-            # Apply schedule if available
-            if agent_config.get("schedule"):
-                current_schedule = agent_config.get("schedule")
-
-            logger.info(f"Applied agent config: Interval {new_interval_s}s, Features enabled - Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}, Keystroke: {is_keystroke_logging_enabled_by_control}")
-        else:
-            # Fallback to global config
-            new_interval_s = config_data.get("capture_interval", 10)
-            current_interval_ms = new_interval_s * 1000
-
-            is_activity_monitoring_enabled_by_control = config_data.get("activity_monitoring_enabled", True)
-            is_network_monitoring_enabled_by_control = config_data.get("network_monitoring_enabled", True)
-            is_live_streaming_enabled_by_control = config_data.get("live_streaming_enabled", False)
-            is_keystroke_logging_enabled_by_control = config_data.get("keystroke_logging_enabled", False)
-            current_schedule = config_data.get("schedule", current_schedule)
-
-            logger.info(f"Applied global config: Interval {new_interval_s}s, Features enabled - Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Live Streaming: {is_live_streaming_enabled_by_control}, Keystroke: {is_keystroke_logging_enabled_by_control}")
-
-        # Update break schedules
-        update_break_schedules(config_data)
-        
-        # Force a break status check after config update
-        check_break_status()
-
-        # Save config locally for offline use
-        save_local_config()
-
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching config from server: {e}")
-        load_local_config()
+        headers = {
+            'X-AGENT-ID': AGENT_ID,
+            'X-API-KEY': API_KEY,
+            'Content-Type': 'application/json'
+        }
+        config_url = f"{BACKEND_URL}/api/config/"
+        logger.info(f"Fetching config from: {config_url}")
+        async with aiohttp.ClientSession() as session:
+            async with session.get(config_url, headers=headers) as response:
+                if response.status == 200:
+                    config_data = await response.json()
+                    logger.info("Config fetched successfully")
+                    # Update agent configuration
+                    agent_config = config_data.get('agent_config', {})
+                    if agent_config:
+                        current_interval_ms = agent_config.get('capture_interval_seconds', 10) * 1000
+                        is_activity_monitoring_enabled_by_control = agent_config.get('is_activity_monitoring_enabled', True)
+                        is_network_monitoring_enabled_by_control = agent_config.get('is_network_monitoring_enabled', True)
+                        is_live_streaming_enabled_by_control = agent_config.get('is_live_streaming_enabled', False)
+                        is_keystroke_logging_enabled_by_control = agent_config.get('is_keystroke_logging_enabled', False)
+                        current_schedule = agent_config.get('schedule', current_schedule)
+                        logger.info(f"Updated agent configuration: Interval - {current_interval_ms // 1000}s, "
+                                    f"Activity Monitoring - {is_activity_monitoring_enabled_by_control}, "
+                                    f"Network Monitoring - {is_network_monitoring_enabled_by_control}")
+                    
+                    return config_data
+                else:
+                    logger.error(f"Error fetching config: {response.status} - {await response.text()}")
+                    return None
     except Exception as e:
-        logger.error(f"General error fetching config: {e}")
-        load_local_config()
-
+        logger.error(f"Error fetching config from server: {e}")
+        return None
+    
 def load_local_config():
     """Load settings from local file when server is unavailable"""
     global current_interval_ms, is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, current_schedule, is_live_streaming_enabled_by_control, is_keystroke_logging_enabled_by_control
+    global company_breaks, user_break_schedule, is_user_on_leave
 
     try:
         config_file_path = "local_agent_config.json"
@@ -1476,9 +1568,15 @@ def load_local_config():
             is_keystroke_logging_enabled_by_control = local_config.get("is_keystroke_logging_enabled", False)
             current_schedule = local_config.get("schedule", current_schedule)
 
+            # Load break schedules
+            company_breaks = local_config.get("company_breaks", [])
+            user_break_schedule = local_config.get("user_break_schedule", [])
+            is_user_on_leave = local_config.get("is_user_on_leave", False)
+
             last_updated = local_config.get("last_updated", 0)
             print(f"Loaded local config (last updated: {datetime.fromtimestamp(last_updated)})")
             print(f"Interval: {current_interval_ms//1000}s, Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}")
+            print(f"Break schedules loaded - Company: {len(company_breaks)}, User: {len(user_break_schedule)}, On leave: {is_user_on_leave}")
         else:
             print("No local config found, using defaults")
     except Exception as e:
@@ -1495,6 +1593,9 @@ def save_local_config():
             "is_live_streaming_enabled": is_live_streaming_enabled_by_control,
             "is_keystroke_logging_enabled": is_keystroke_logging_enabled_by_control,
             "schedule": current_schedule,
+            "company_breaks": company_breaks,
+            "user_break_schedule": user_break_schedule,
+            "is_user_on_leave": is_user_on_leave,
             "last_updated": time.time()
         }
 
@@ -1503,10 +1604,10 @@ def save_local_config():
             config_file_path = os.path.join(os.path.dirname(sys.executable), "local_agent_config.json")
 
         with open(config_file_path, 'w') as f:
-            json.dump(local_config, f, indent=2)
+            json.dump(local_config, f, indent=2, default=str)  # default=str to handle time objects
         print(f"Config saved locally to {config_file_path}")
     except Exception as e:
-        print(f"General error fetching config: {e}")
+        print(f"Error saving local config: {e}")
 
 async def run_monitoring_loop(config, agent_id):
     """
@@ -1526,10 +1627,11 @@ async def run_monitoring_loop(config, agent_id):
     print(f"--- Monitoring Mode for Agent: {agent_id} ---")
     print(f"Attempting to connect to: {websocket_url}")
 
-    await fetch_config()
+    # Load local config first, fetch from server after WebSocket auth
+    load_local_config()
 
     # Schedule periodic config refresh every 5 minutes
-    last_config_fetch = time.time()
+    last_config_fetch = 0  # Force initial fetch after auth
     CONFIG_REFRESH_INTERVAL = 300  # 5 minutes
 
     print(f"--- Monitoring Mode for Agent ID: {agent_id} ---")
@@ -1544,6 +1646,11 @@ async def run_monitoring_loop(config, agent_id):
                 await websocket.send(json.dumps(auth_payload))
 
                 print("Authentication successful. Starting data submission loop.")
+
+                # Fetch initial config after successful authentication
+                logger.info("Fetching initial configuration from server...")
+                await fetch_config()
+                last_config_fetch = time.time()
 
                 message_handler_task = asyncio.create_task(websocket_message_handler())
 

@@ -22,12 +22,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         # --- NEW LOGIC TO EMBED TOKEN ---
         # Generate a new access token for the logged-in user.
         try:
-            refresh = RefreshToken.for_user(self.request.user)
-            context['access_token'] = str(refresh.access_token)
+            if self.request.user.is_authenticated:
+                refresh = RefreshToken.for_user(self.request.user)
+                context['access_token'] = str(refresh.access_token)
+                print(f"Generated access token for user {self.request.user.email}")
+            else:
+                context['access_token'] = None
+                print("User not authenticated, no token generated")
         except Exception as e:
             # Handle cases where token generation might fail
             context['access_token'] = None
             print(f"Could not generate access token for user {self.request.user.email}: {e}")
+            import traceback
+            traceback.print_exc()
             
         return context
     

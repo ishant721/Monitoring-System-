@@ -397,10 +397,18 @@
         const ACCESS_TOKEN = '{{ access_token }}';
 
         // API Headers
-        const getHeaders = () => ({
-            'Authorization': `Bearer ${ACCESS_TOKEN}`,
-            'Content-Type': 'application/json'
-        });
+        const getHeaders = () => {
+            if (!ACCESS_TOKEN || ACCESS_TOKEN === 'None') {
+                console.error('No access token available');
+                return {
+                    'Content-Type': 'application/json'
+                };
+            }
+            return {
+                'Authorization': `Bearer ${ACCESS_TOKEN}`,
+                'Content-Type': 'application/json'
+            };
+        };
 
         // Format timestamp
         function formatTimestamp(timestamp) {
@@ -419,9 +427,25 @@
         // Load agent status
         async function loadAgentStatus() {
             try {
+                const headers = getHeaders();
+                console.log('Making request with headers:', headers);
+                
                 const response = await fetch('/monitor/api/agents/status/', {
-                    headers: getHeaders()
+                    headers: headers
                 });
+                
+                console.log('Response status:', response.status);
+                
+                if (response.status === 401) {
+                    console.error('Authentication failed - redirecting to login');
+                    window.location.href = '/accounts/login/';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const agents = await response.json();
 
                 const container = document.getElementById('agent-status-container');
