@@ -36,12 +36,12 @@ def get_config_api(request):
     """
     import logging
     logger = logging.getLogger(__name__)
-    
+
     # Get agent_id from request headers (set by authentication)
     agent_id = getattr(request, 'agent_id', None)
     logger.info(f"Config request - Agent ID: {agent_id}")
     logger.info(f"Request headers: {dict(request.META)}")
-    
+
     if not agent_id:
         logger.error("Missing X-AGENT-ID header in config request")
         return Response({
@@ -680,3 +680,195 @@ def keylog_history_api_view(request):
 
     data = [{'agent_id': log.agent.agent_id, 'user_email': log.agent.user.email, 'timestamp': log.timestamp.isoformat(), 'source_app': log.source_app, 'key_sequence': log.key_sequence, 'is_messaging': log.is_messaging_log} for log in queryset]
     return Response(data)
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def live_streams_api_view(request):
+    """
+    Get all currently live streaming agents
+    """
+    user = request.user
+    live_only = request.GET.get('live_only', 'false').lower() == 'true'
+
+    try:
+        # Get agents based on user role
+        if user.role == CustomUser.SUPERADMIN:
+            agents = Agent.objects.all()
+        elif user.role == CustomUser.ADMIN:
+            agents = Agent.objects.filter(user__company_admin=user)
+        else:
+            return Response({"error": "Insufficient permissions"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Filter for live streaming agents if requested
+        if live_only:
+            agents = agents.filter(is_live_streaming=True, is_live_streaming_enabled=True)
+
+        agents_data = []
+        for agent in agents:
+            if agent.user:
+                agents_data.append({
+                    'agent_id': agent.agent_id,
+                    'user_email': agent.user.email,
+                    'is_live_streaming': agent.is_live_streaming,
+                    'is_live_streaming_enabled': agent.is_live_streaming_enabled,
+                    'last_seen': agent.last_seen.isoformat() if agent.last_seen else None,
+                    'live_stream_url': agent.live_stream_url
+                })
+
+        return Response(agents_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        logger.error(f"Error getting live streams: {e}")
+        return Response({"error": "Failed to get live streams"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def toggle_live_streaming_api_view(request, agent_id):
+    """
+    Toggle live streaming for a specific agent
+    """
+    user = request.user
+
+    try:
+        # Get agent based on user role
+        if user.role == CustomUser.SUPERADMIN:
+            agent = Agent.objects.get(agent_id=agent_id)
+        elif user.role == CustomUser.ADMIN:
+            agent = Agent.objects.get(agent_id=agent_id, user__company_admin=user)
+        else:
+            return Response({"error": "Insufficient permissions"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Toggle live streaming enabled status
+        agent.is_live_streaming_enabled = not agent.is_live_streaming_enabled
+        agent.save(update_fields=['is_live_streaming_enabled'])
+
+        # Send control command to agent
+        channel_layer = get_channel_layer()
+        control_message = {
+            "type": "control_command",
+            "action": "set_global_config",
+            "feature_bundle": "global_config",
+            "live_streaming_enabled": agent.is_live_streaming_enabled,
+            "capture_interval": agent.capture_interval_seconds,
+            "activity_monitoring_enabled": agent.is_activity_monitoring_enabled,
+            "network_monitoring_enabled": agent.is_network_monitoring_enabled
+        }
+
+        async_to_sync(channel_layer.group_send)(f"agent_{agent_id}", control_message)
+
+        return Response({
+            "message": f"Live streaming {'enabled' if agent.is_live_streaming_enabled else 'disabled'} for agent {agent_id}",
+            "is_live_streaming_enabled": agent.is_live_streaming_enabled
+        }, status=status.HTTP_200_OK)
+
+    except Agent.DoesNotExist:
+        return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Error toggling live streaming for agent {agent_id}: {e}")
+        return Response({"error": "Failed to toggle live streaming"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+def get_agent_config(request):
+    """
+    Returns the current configuration for the authenticated agent.
+    This includes monitoring settings, schedules, and break information.
+    """
+    try:
+        # Get the agent first
+        agent_id = request.META.get('HTTP_X_AGENT_ID')
+        if not agent_id:
+            return Response({'error': 'Agent ID header required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        agent = Agent.objects.get(agent_id=agent_id)
+        user = agent.user
+
+        # Build the schedule object from agent model
+        schedule = {}
+        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+            start_field = f'{day}_active_start'
+            end_field = f'{day}_active_end'
+            start_time = getattr(agent, start_field)
+            end_time = getattr(agent, end_field)
+
+            schedule[day] = {
+                'start': start_time.strftime('%H:%M') if start_time else None,
+                'end': end_time.strftime('%H:%M') if end_time else None
+            }
+
+        # Get company break schedules
+        company_breaks = []
+        if user and user.company_admin:
+            from accounts.models import CompanyBreakSchedule
+            company_break_schedules = CompanyBreakSchedule.objects.filter(
+                admin=user.company_admin, 
+                is_active=True
+            )
+            for break_schedule in company_break_schedules:
+                company_breaks.append({
+                    'name': break_schedule.name,
+                    'day': break_schedule.day,
+                    'start': break_schedule.start_time.strftime('%H:%M'),
+                    'end': break_schedule.end_time.strftime('%H:%M')
+                })
+
+        # Get user-specific break schedules and leave status
+        user_break_schedule = []
+        is_user_on_leave = False
+        if user:
+            from accounts.models import UserBreakSchedule
+            from datetime import date
+
+            # Check for active leave
+            active_leave = UserBreakSchedule.objects.filter(
+                user=user,
+                is_on_leave=True,
+                is_active=True,
+                leave_start_date__lte=date.today(),
+                leave_end_date__gte=date.today()
+            ).first()
+
+            if active_leave:
+                is_user_on_leave = True
+
+            # Get user break schedules
+            user_breaks = UserBreakSchedule.objects.filter(
+                user=user,
+                is_active=True,
+                is_on_leave=False
+            )
+            for break_schedule in user_breaks:
+                if break_schedule.start_time and break_schedule.end_time:
+                    user_break_schedule.append({
+                        'name': break_schedule.name,
+                        'day': break_schedule.day,
+                        'start': break_schedule.start_time.strftime('%H:%M'),
+                        'end': break_schedule.end_time.strftime('%H:%M')
+                    })
+
+        # Return agent-specific configuration
+        config = {
+            'agent_config': {
+                'capture_interval_seconds': agent.capture_interval_seconds,
+                'is_activity_monitoring_enabled': agent.is_activity_monitoring_enabled,
+                'is_network_monitoring_enabled': agent.is_network_monitoring_enabled,
+                'is_live_streaming_enabled': agent.is_live_streaming_enabled,
+                'is_keystroke_logging_enabled': getattr(agent, 'is_keystroke_logging_enabled', False),
+                'schedule': schedule
+            },
+            'company_breaks': company_breaks,
+            'user_break_schedule': user_break_schedule,
+            'is_user_on_leave': is_user_on_leave
+        }
+
+        return Response(config, status=status.HTTP_200_OK)
+
+    except Agent.DoesNotExist:
+        return Response({'error': 'Agent not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': f'Configuration fetch failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

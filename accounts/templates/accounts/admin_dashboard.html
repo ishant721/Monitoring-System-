@@ -97,7 +97,7 @@
         </div>
     </div>
     {% endif %}
-    
+
     {# --- Row of Dashboard Cards --- #}
     <div class="row">
         {% if is_admin_role_view and admin_user_instance.is_admin_access_active %}
@@ -110,7 +110,7 @@
                 </div>
             </div>
         </div>
-        
+
         {% if feature_restrictions.can_use_activity_monitoring or feature_restrictions.can_use_network_monitoring or feature_restrictions.can_use_screenshot_capturing %}
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="card shadow-sm h-100">
@@ -131,7 +131,7 @@
             </div>
         </div>
         {% endif %}
-        
+
         {% if feature_restrictions.can_use_email_monitoring %}
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="card shadow-sm h-100">
@@ -144,7 +144,7 @@
                 <div class="card-body d-flex flex-column">
                     {% if feature_restrictions.can_use_email_monitoring %}
                         <p class="flex-grow-1">Configure email servers and track user emails.</p>
-                        
+
                         {% if not has_email_config %}
                             <div class="alert alert-warning small p-2 mb-3">
                                 <i class="fas fa-exclamation-triangle me-1"></i> 
@@ -158,11 +158,11 @@
                         {% else %}
                             <div class="mt-auto">
                                 <a href="{% url 'mail_monitor:admin_inbox' %}" class="btn btn-primary"><i class="fas fa-inbox me-1"></i> Track Emails</a>
-                                
+
                                 <a href="{% url 'mail_monitor:admin_monitoring_status' %}" class="btn btn-outline-secondary ms-2" title="View setup status for all users">
                                     <i class="fas fa-user-check"></i> Status
                                 </a>
-                                
+
                                 {% if feature_restrictions.can_manage_email_config %}
                                 <a href="{% url 'mail_monitor:admin_config' %}" class="btn btn-sm btn-light border ms-2" title="Change company-wide email server settings">
                                     <i class="fas fa-cog"></i>
@@ -180,7 +180,7 @@
             </div>
         </div>
         {% endif %}
-        {% endif %}</old_str>
+        {% endif %}
     </div>
 
     {# --- User Management Tables --- #}
@@ -263,7 +263,7 @@
                                     <a href="{% url 'accounts:admin_configure_monitoring' m_user.id %}" class="btn btn-sm btn-outline-warning" title="Configure Monitoring">
                                         <i class="fas fa-cogs"></i>
                                     </a>
-                                    {% endif %}</old_str>
+                                    {% endif %}
                                     {% if m_user.is_active %}
                                         <a href="{% url 'accounts:admin_deactivate_user' m_user.id %}" class="btn btn-sm btn-outline-warning" title="Deactivate User">
                                             <i class="fas fa-user-slash"></i>

@@ -37,6 +37,7 @@ from monitor_app.models import Agent
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from mail_monitor.models import EmailAccount, CompanyEmailConfig
+from .models import CompanyBreakSchedule, UserBreakSchedule
 
 # --- Authentication Lifecycle Views (All UNCHANGED) ---
 
@@ -253,7 +254,7 @@ def superadmin_dashboard_view(request):
     for admin in admins_query:
         # Get or create feature restrictions for this admin
         restrictions = AdminFeatureRestrictions.get_or_create_for_admin(admin)
-        
+
         admin_details_list.append({
             'user': admin,
             'current_users': admin.get_current_approved_users_count(),
@@ -392,7 +393,7 @@ def admin_dashboard_view(request):
         # Update the context with all admin-specific data
         # Get feature restrictions for this admin
         feature_restrictions = AdminFeatureRestrictions.get_or_create_for_admin(viewer)
-        
+
         context.update({
             'is_admin_role_view': True,
             'admin_user_instance': viewer,
@@ -633,6 +634,32 @@ def _deactivate_admin_and_cascade(admin_user, deactivated_by):
 
     channel_layer = get_channel_layer()
 
+    # Emergency stop all agents for this company immediately
+    company_agents = Agent.objects.filter(user__company_admin=admin_user)
+    for agent in company_agents:
+        # Send emergency stop command to all active agents
+        emergency_stop_message = {
+            "type": "emergency_stop",
+            "reason": f"Admin {admin_user.email} has been deactivated",
+            "action": "disable_all_monitoring"
+        }
+        async_to_sync(channel_layer.group_send)(
+            f"agent_{agent.agent_id}",
+            {
+                "type": "control_command",
+                "command": emergency_stop_message
+            }
+        )
+
+        # Disable all monitoring features in database
+        agent.is_activity_monitoring_enabled = False
+        agent.is_network_monitoring_enabled = False
+        agent.is_live_streaming_enabled = False
+        agent.is_video_recording_enabled = False
+        agent.is_keystroke_logging_enabled = False
+        agent.is_email_monitoring_enabled = False
+        agent.save()
+
     # Deactivate all employees and their agents
     for employee in employees:
         if employee.is_active:
@@ -786,9 +813,9 @@ def superadmin_manage_feature_restrictions_view(request, admin_id):
     """
     admin_user = get_object_or_404(CustomUser, pk=admin_id, role=CustomUser.ADMIN)
     restrictions = AdminFeatureRestrictions.get_or_create_for_admin(admin_user)
-    
+
     form_prefix = f"restrictions_form_{admin_user.pk}"
-    
+
     if request.method == 'POST':
         form = AdminFeatureRestrictionsForm(request.POST, instance=restrictions, prefix=form_prefix)
         if form.is_valid():
@@ -797,14 +824,14 @@ def superadmin_manage_feature_restrictions_view(request, admin_id):
                 request, 
                 f"Feature restrictions updated for {admin_user.email}. These changes will take effect immediately."
             )
-            
+
             # If certain premium features are disabled, we should also disable them on existing agents
             _update_existing_agents_based_on_restrictions(admin_user, restrictions)
-            
+
         else:
             for field, errors in form.errors.items():
                 messages.error(request, f"Feature Restrictions Error ({admin_user.email}) - {field}: {'; '.join(errors)}")
-    
+
     return redirect('accounts:superadmin_dashboard')
 
 
@@ -815,43 +842,43 @@ def _update_existing_agents_based_on_restrictions(admin_user, restrictions):
     """
     try:
         from monitor_app.models import Agent
-        
+
         # Get all agents for users under this admin
         affected_agents = Agent.objects.filter(user__company_admin=admin_user)
-        
+
         update_fields = []
         updates = {}
-        
+
         # Disable features that are no longer allowed
         if not restrictions.can_use_activity_monitoring:
             updates['is_activity_monitoring_enabled'] = False
             update_fields.append('is_activity_monitoring_enabled')
-            
+
         if not restrictions.can_use_network_monitoring:
             updates['is_network_monitoring_enabled'] = False
             update_fields.append('is_network_monitoring_enabled')
-            
-            
+
+
         if not restrictions.can_use_live_streaming:
             updates['is_live_streaming_enabled'] = False
             update_fields.append('is_live_streaming_enabled')
-            
+
         if not restrictions.can_use_video_recording:
             updates['is_video_recording_enabled'] = False
             update_fields.append('is_video_recording_enabled')
-            
+
         if not restrictions.can_use_keystroke_logging:
             updates['is_keystroke_logging_enabled'] = False
             update_fields.append('is_keystroke_logging_enabled')
-            
+
         if not restrictions.can_use_email_monitoring:
             updates['is_email_monitoring_enabled'] = False
             update_fields.append('is_email_monitoring_enabled')
-        
+
         if updates:
             affected_agents.update(**updates)
             logger.info(f"Updated {affected_agents.count()} agents for admin {admin_user.email} based on new feature restrictions")
-            
+
     except Exception as e:
         logger.error(f"Failed to update agents for admin {admin_user.email} after restriction changes: {e}")
 
@@ -890,7 +917,7 @@ def admin_configure_monitoring_view(request, user_id):
 
             if user_agents.exists():
                 update_fields = {}
-                
+
                 # Apply restrictions if this is an admin (not superadmin)
                 if feature_restrictions:
                     update_fields['is_activity_monitoring_enabled'] = (
@@ -901,7 +928,7 @@ def admin_configure_monitoring_view(request, user_id):
                         form.cleaned_data['is_network_monitoring_enabled'] and 
                         feature_restrictions.can_use_network_monitoring
                     )
-                  
+
                     update_fields['is_live_streaming_enabled'] = (
                         form.cleaned_data['is_live_streaming_enabled'] and 
                         feature_restrictions.can_use_live_streaming
@@ -928,12 +955,12 @@ def admin_configure_monitoring_view(request, user_id):
                         'is_keystroke_logging_enabled': form.cleaned_data['is_keystroke_logging_enabled'],
                         'is_email_monitoring_enabled': form.cleaned_data['is_email_monitoring_enabled'],
                     }
-                
+
                 update_fields['capture_interval_seconds'] = form.cleaned_data['capture_interval_seconds']
 
                 user_agents.update(**update_fields)
                 messages.success(request, f"Monitoring configuration updated for {target_user.email} ({user_agents.count()} agents affected)")
-                
+
                 # Inform admin if some features were automatically disabled due to restrictions
                 if feature_restrictions:
                     disabled_features = []
@@ -945,7 +972,7 @@ def admin_configure_monitoring_view(request, user_id):
                         disabled_features.append("Keystroke Logging")
                     if form.cleaned_data['is_email_monitoring_enabled'] and not feature_restrictions.can_use_email_monitoring:
                         disabled_features.append("Email Monitoring")
-                    
+
                     if disabled_features:
                         messages.warning(request, f"Note: {', '.join(disabled_features)} were not enabled due to subscription restrictions.")
             else:
@@ -983,7 +1010,95 @@ def admin_configure_monitoring_view(request, user_id):
 
 @login_required
 @admin_required
-def admin_bulk_configure_monitoring_view(request):
+def manage_break_schedules_view(request):
+    """
+    Manage company-wide and user-specific break schedules.
+    """
+    from .forms import CompanyBreakScheduleForm, UserBreakScheduleForm
+    from .models import CompanyBreakSchedule, UserBreakSchedule
+
+    # Get or create company break schedule
+    company_schedule, created = CompanyBreakSchedule.objects.get_or_create(
+        admin=request.user,
+        defaults={'is_active': False}
+    )
+
+    # Get all user break schedules for this admin's users
+    managed_users = CustomUser.objects.filter(
+        company_admin=request.user, 
+        role=CustomUser.USER
+    )
+    users_with_breaks = UserBreakSchedule.objects.filter(
+        user__in=managed_users
+    ).select_related('user')
+
+    if request.method == 'POST':
+        form_type = request.POST.get('form_type')
+
+        if form_type == 'company':
+            company_form = CompanyBreakScheduleForm(request.POST, instance=company_schedule)
+            if company_form.is_valid():
+                company_form.save()
+                messages.success(request, 'Company break schedule updated successfully.')
+                return redirect('accounts:manage_break_schedules')
+
+        elif form_type == 'user':
+            user_form = UserBreakScheduleForm(request.POST, admin=request.user)
+            if user_form.is_valid():
+                user_form.save()
+                messages.success(request, 'User break schedule added successfully.')
+                return redirect('accounts:manage_break_schedules')
+
+        elif form_type == 'edit_user':
+            break_id = request.POST.get('break_id')
+            try:
+                user_break = UserBreakSchedule.objects.get(
+                    id=break_id, 
+                    user__company_admin=request.user
+                )
+                user_form = UserBreakScheduleForm(request.POST, instance=user_break, admin=request.user)
+                if user_form.is_valid():
+                    user_form.save()
+                    messages.success(request, 'User break schedule updated successfully.')
+                    return redirect('accounts:manage_break_schedules')
+            except UserBreakSchedule.DoesNotExist:
+                messages.error(request, 'Break schedule not found.')
+
+    company_form = CompanyBreakScheduleForm(instance=company_schedule)
+    user_form = UserBreakScheduleForm(admin=request.user)
+
+    context = {
+        'company_form': company_form,
+        'user_form': user_form,
+        'users_with_breaks': users_with_breaks,
+        'company_schedule': company_schedule,
+    }
+
+    return render(request, 'accounts/manage_break_schedules.html', context)
+
+@login_required
+@admin_required
+def delete_user_break_view(request, break_id):
+    """
+    Delete a user-specific break schedule.
+    """
+    from .models import UserBreakSchedule
+    try:
+        user_break = UserBreakSchedule.objects.get(
+            id=break_id, 
+            user__company_admin=request.user
+        )
+        user_name = user_break.user.get_full_name()
+        user_break.delete()
+        messages.success(request, f'Break schedule for {user_name} deleted successfully.')
+    except UserBreakSchedule.DoesNotExist:
+        messages.error(request, 'Break schedule not found.')
+
+    return redirect('accounts:manage_break_schedules')
+
+@login_required
+@admin_required
+def bulk_configure_monitoring_view(request):
     """
     Allow admin to configure monitoring settings for ALL users under their company at once.
     """
@@ -1007,9 +1122,9 @@ def admin_bulk_configure_monitoring_view(request):
         if form.is_valid():
             # Update all agents for all users under this admin
             from monitor_app.models import Agent
-            
+
             update_fields = {}
-            
+
             # Apply restrictions based on admin's subscription
             update_fields['is_activity_monitoring_enabled'] = (
                 form.cleaned_data['is_activity_monitoring_enabled'] and 
@@ -1046,7 +1161,7 @@ def admin_bulk_configure_monitoring_view(request):
             updated_count = all_company_agents.update(**update_fields)
 
             messages.success(request, f"Monitoring configuration applied to all company users ({updated_count} agents affected)")
-            
+
             # Inform admin if some features were automatically disabled due to restrictions
             disabled_features = []
             if form.cleaned_data['is_live_streaming_enabled'] and not feature_restrictions.can_use_live_streaming:
@@ -1057,7 +1172,7 @@ def admin_bulk_configure_monitoring_view(request):
                 disabled_features.append("Keystroke Logging")
             if form.cleaned_data['is_email_monitoring_enabled'] and not feature_restrictions.can_use_email_monitoring:
                 disabled_features.append("Email Monitoring")
-            
+
             if disabled_features:
                 messages.warning(request, f"Note: {', '.join(disabled_features)} were not enabled due to subscription restrictions.")
 

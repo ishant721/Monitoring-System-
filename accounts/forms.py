@@ -2,7 +2,7 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm, AuthenticationForm, SetPasswordForm
-from .models import CustomUser, AdminFeatureRestrictions
+from .models import CustomUser, AdminFeatureRestrictions, CompanyBreakSchedule, UserBreakSchedule
 from django.utils import timezone
 from datetime import timedelta
 
@@ -386,7 +386,42 @@ class SuperadminTrialExtensionForm(forms.Form):
     )
 
 
-class AgentMonitoringConfigForm(forms.Form):
+class CompanyBreakScheduleForm(forms.ModelForm):
+    class Meta:
+        model = CompanyBreakSchedule
+        fields = ['name', 'day', 'start_time', 'end_time', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Lunch Break'}),
+            'day': forms.Select(attrs={'class': 'form-control'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+        }
+
+class UserBreakScheduleForm(forms.ModelForm):
+    class Meta:
+        model = UserBreakSchedule
+        fields = ['user', 'name', 'day', 'start_time', 'end_time', 'is_on_leave', 'leave_start_date', 'leave_end_date', 'leave_reason', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Personal Break'}),
+            'day': forms.Select(attrs={'class': 'form-control'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'leave_start_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'leave_end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'leave_reason': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, admin=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if admin:
+            # Only show users managed by this admin
+            self.fields['user'].queryset = CustomUser.objects.filter(
+                company_admin=admin, 
+                role=CustomUser.USER,
+                is_active=True
+            )
+
+class BulkMonitoringConfigForm(forms.Form):
     # Default features (enabled by default)
     is_activity_monitoring_enabled = forms.BooleanField(
         required=False, 
@@ -413,7 +448,7 @@ class AgentMonitoringConfigForm(forms.Form):
         label="Screenshot Interval (seconds)",
         help_text="How often to capture screenshots (5-300 seconds)"
     )
-    
+
     # Premium features (disabled by default)
     is_live_streaming_enabled = forms.BooleanField(
         required=False, 
@@ -518,6 +553,63 @@ class AdminFeatureRestrictionsForm(forms.ModelForm):
             'max_screenshot_retention_days': 'Maximum days to keep screenshots (1-365)',
             'max_video_retention_days': 'Maximum days to keep video recordings (1-90)',
         }
+
+
+class AgentMonitoringConfigForm(forms.Form):
+    """Form for configuring monitoring settings for user agents"""
+    
+    # Default features (enabled by default)
+    is_activity_monitoring_enabled = forms.BooleanField(
+        required=False, 
+        initial=True,
+        label="Activity Monitoring",
+        help_text="Track active windows and applications"
+    )
+    is_network_monitoring_enabled = forms.BooleanField(
+        required=False, 
+        initial=True,
+        label="Network Monitoring", 
+        help_text="Monitor network usage and data transfer"
+    )
+    is_screenshot_capturing_enabled = forms.BooleanField(
+        required=False, 
+        initial=True,
+        label="Screenshot Capturing",
+        help_text="Capture periodic screenshots"
+    )
+    capture_interval_seconds = forms.IntegerField(
+        initial=10,
+        min_value=5,
+        max_value=300,
+        label="Screenshot Interval (seconds)",
+        help_text="How often to capture screenshots (5-300 seconds)"
+    )
+
+    # Premium features (disabled by default)
+    is_live_streaming_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Live Streaming",
+        help_text="Enable real-time screen streaming (Premium feature)"
+    )
+    is_video_recording_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Video Recording",
+        help_text="Enable screen recording functionality (Premium feature)"
+    )
+    is_keystroke_logging_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Keystroke Logging",
+        help_text="Capture detailed keystroke logs (Premium feature - use responsibly)"
+    )
+    is_email_monitoring_enabled = forms.BooleanField(
+        required=False, 
+        initial=False,
+        label="Email Monitoring",
+        help_text="Monitor email activity (Premium feature)"
+    )
 
 
 class AdminAddUserForm(WorkEmailDomainValidationMixin, forms.ModelForm):

@@ -1,0 +1,18 @@
+2025-07-05 10:59:43,020 - INFO - --- Agent First-Time Setup: Pairing Mode ---
+2025-07-05 10:59:46,453 - INFO - Connecting to ws://127.0.0.1:8000/monitor/ws/agent/pairing/ to pair with new ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 10:59:46,485 - INFO - Agent successfully paired with ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 10:59:46,486 - INFO - Pairing successful! Agent starting in monitoring mode.
+2025-07-05 10:59:46,495 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: False, Keystroke: False
+2025-07-05 11:02:26,380 - INFO - Agent stopped by user
+2025-07-05 11:02:26,382 - INFO - Agent process terminated
+2025-07-05 11:02:27,565 - INFO - Agent starting with existing ID: 9a39d9e0-93f8-4d68-90b4-9edb2fd0140a
+2025-07-05 11:02:27,576 - INFO - Applied global config: Interval 10s, Features enabled - Activity: True, Network: True, Live Streaming: False, Keystroke: False
+2025-07-05 11:03:26,086 - INFO - Processing global config update...
+2025-07-05 11:03:26,086 - INFO - Updated interval from global config: 10s
+2025-07-05 11:03:26,087 - INFO - Updated activity monitoring from global config: True
+2025-07-05 11:03:26,087 - INFO - Updated network monitoring from global config: True
+2025-07-05 11:03:26,088 - INFO - Updated live streaming flag from global config: True
+2025-07-05 11:03:26,088 - INFO - Reconciling agent state with new global configuration...
+2025-07-05 11:03:26,088 - INFO - Config requires live stream ON, starting...
+2025-07-05 11:06:48,048 - INFO - Agent stopped by user
+2025-07-05 11:06:48,049 - INFO - Agent process terminated

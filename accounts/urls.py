@@ -49,6 +49,14 @@ urlpatterns = [
     path('superadmin/activate-admin/<int:admin_id>/', views.superadmin_activate_admin_view, name='superadmin_activate_admin'),
     path('superadmin/extend-trial/<int:admin_id>/', views.superadmin_extend_trial_view, name='superadmin_extend_trial'),
     path('admin/configure-monitoring/<int:user_id>/', views.admin_configure_monitoring_view, name='admin_configure_monitoring'),
-    path('admin/bulk-configure-monitoring/', views.admin_bulk_configure_monitoring_view, name='admin_bulk_configure_monitoring'),
+    path('admin/bulk-configure-monitoring/', views.bulk_configure_monitoring_view, name='admin_bulk_configure_monitoring'),
     path('admin/manage-features/<int:admin_id>/', views.superadmin_manage_feature_restrictions_view, name='superadmin_manage_feature_restrictions'),
+
+    # User Management (Admin only)
+    path('approve-user/<int:user_id>/', views.approve_user_view, name='approve_user'),
+    path('user-detail/<int:user_id>/', views.admin_view_user_detail, name='admin_view_user_detail'),
+
+    # Break Schedule Management (Admin only)
+    path('manage-break-schedules/', views.manage_break_schedules_view, name='manage_break_schedules'),
+    path('delete-user-break/<int:break_id>/', views.delete_user_break_view, name='delete_user_break'),
 ]

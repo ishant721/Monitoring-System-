@@ -1,0 +1,336 @@
+
+{% extends "accounts/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Manage Break Schedules{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-clock me-2"></i>Break Schedule Management</h2>
+                <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Company-wide Break Schedules -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-building me-2"></i>Company-wide Break Schedules</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'accounts:manage_break_schedules' %}">
+                        {% csrf_token %}
+                        {{ company_form|crispy }}
+                        <button type="submit" name="form_type" value="company" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Company Schedule
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User-specific Break Schedules -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>User-specific Break Schedules</h5>
+                </div>
+                <div class="card-body">
+                    {% if users_with_breaks %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Email</th>
+                                        <th>Break Type</th>
+                                        <th>Start Time</th>
+                                        <th>End Time</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_break in users_with_breaks %}
+                                    <tr>
+                                        <td>{{ user_break.user.get_full_name }}</td>
+                                        <td>{{ user_break.user.email }}</td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ user_break.get_break_type_display }}</span>
+                                        </td>
+                                        <td>{{ user_break.start_time|time:"H:i" }}</td>
+                                        <td>{{ user_break.end_time|time:"H:i" }}</td>
+                                        <td>
+                                            {% if user_break.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-warning edit-user-break" 
+                                                    data-user-id="{{ user_break.user.id }}"
+                                                    data-break-id="{{ user_break.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <a href="{% url 'accounts:delete_user_break' user_break.id %}" 
+                                               class="btn btn-sm btn-danger"
+                                               onclick="return confirm('Are you sure you want to delete this break schedule?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>No user-specific break schedules configured.
+                        </div>
+                    {% endif %}
+
+                    <!-- Add User Break Form -->
+                    <hr>
+                    <h6><i class="fas fa-plus me-2"></i>Add User-specific Break Schedule</h6>
+                    <form method="post" action="{% url 'accounts:manage_break_schedules' %}">
+                        {% csrf_token %}
+                        {{ user_form|crispy }}
+                        <button type="submit" name="form_type" value="user" class="btn btn-info">
+                            <i class="fas fa-plus me-1"></i>Add User Break
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Agent Control Panel -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-robot me-2"></i>Agent Control Panel</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h6 class="mb-0"><i class="fas fa-stop me-2"></i>Emergency Stop</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Stop all monitoring agents immediately for all users under your management.</p>
+                                    <button id="stopAllAgents" class="btn btn-danger" 
+                                            onclick="return confirm('Are you sure you want to stop ALL monitoring agents? This will affect all your users.')">
+                                        <i class="fas fa-stop-circle me-1"></i>Stop All Agents
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-play me-2"></i>Resume Monitoring</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Resume monitoring for all agents that were stopped during break time.</p>
+                                    <button id="resumeAllAgents" class="btn btn-success">
+                                        <i class="fas fa-play-circle me-1"></i>Resume All Agents
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Agent Status -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Current Agent Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="agentStatusTable">
+                        <!-- This will be populated by AJAX -->
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Break Modal -->
+<div class="modal fade" id="editUserBreakModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit User Break Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserBreakForm" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="edit_user">
+                    <input type="hidden" name="break_id" id="editBreakId">
+                    <!-- Form fields will be populated by JavaScript -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="editUserBreakForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load agent status on page load
+    loadAgentStatus();
+    
+    // Refresh agent status every 30 seconds
+    setInterval(loadAgentStatus, 30000);
+    
+    // Stop all agents
+    document.getElementById('stopAllAgents').addEventListener('click', function() {
+        if (!confirm('Are you sure you want to stop ALL monitoring agents?')) return;
+        
+        fetch('{% url "monitor_app:api_admin_control_agents" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ action: 'stop_all' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('All agents stopped successfully');
+                loadAgentStatus();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while stopping agents');
+        });
+    });
+    
+    // Resume all agents
+    document.getElementById('resumeAllAgents').addEventListener('click', function() {
+        fetch('{% url "monitor_app:api_admin_control_agents" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ action: 'resume_all' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('All agents resumed successfully');
+                loadAgentStatus();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while resuming agents');
+        });
+    });
+});
+
+function loadAgentStatus() {
+    fetch('{% url "monitor_app:api_agent_status" %}')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('agentStatusTable');
+            if (data.agents && data.agents.length > 0) {
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Agent ID</th>
+                                    <th>Status</th>
+                                    <th>Last Seen</th>
+                                    <th>Monitoring</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.agents.forEach(agent => {
+                    const statusBadge = agent.is_online ? 
+                        '<span class="badge bg-success">Online</span>' : 
+                        '<span class="badge bg-danger">Offline</span>';
+                    
+                    const monitoringStatus = agent.is_monitoring_active ? 
+                        '<span class="badge bg-primary">Active</span>' : 
+                        '<span class="badge bg-secondary">Stopped</span>';
+                    
+                    html += `
+                        <tr>
+                            <td>${agent.user_name}</td>
+                            <td><code>${agent.agent_id}</code></td>
+                            <td>${statusBadge}</td>
+                            <td>${agent.last_seen || 'Never'}</td>
+                            <td>${monitoringStatus}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="controlAgent('${agent.agent_id}', 'toggle')">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                statusDiv.innerHTML = html;
+            } else {
+                statusDiv.innerHTML = '<div class="alert alert-info">No agents found.</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading agent status:', error);
+            document.getElementById('agentStatusTable').innerHTML = 
+                '<div class="alert alert-danger">Error loading agent status</div>';
+        });
+}
+
+function controlAgent(agentId, action) {
+    fetch('{% url "monitor_app:api_admin_control_agents" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ 
+            action: action,
+            agent_id: agentId 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadAgentStatus();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while controlling the agent');
+    });
+}
+</script>
+{% endblock %}

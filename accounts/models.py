@@ -10,6 +10,95 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class CompanyBreakSchedule(models.Model):
+    """
+    Defines company-wide break schedules that apply to all employees.
+    """
+    admin = models.ForeignKey(
+        'CustomUser', 
+        on_delete=models.CASCADE, 
+        related_name='company_break_schedules',
+        limit_choices_to={'role': 'ADMIN'}
+    )
+    name = models.CharField(max_length=100, help_text="Break name (e.g., 'Lunch Break', 'Coffee Break')")
+    
+    WEEKDAY_CHOICES = [
+        ('monday', 'Monday'),
+        ('tuesday', 'Tuesday'),
+        ('wednesday', 'Wednesday'),
+        ('thursday', 'Thursday'),
+        ('friday', 'Friday'),
+        ('saturday', 'Saturday'),
+        ('sunday', 'Sunday'),
+        ('daily', 'Every Day'),
+    ]
+    
+    day = models.CharField(max_length=10, choices=WEEKDAY_CHOICES, default='daily')
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Company Break Schedule"
+        verbose_name_plural = "Company Break Schedules"
+        ordering = ['day', 'start_time']
+    
+    def __str__(self):
+        return f"{self.name} - {self.get_day_display()} ({self.start_time}-{self.end_time})"
+
+
+class UserBreakSchedule(models.Model):
+    """
+    Defines user-specific break schedules and leave status.
+    """
+    user = models.ForeignKey(
+        'CustomUser', 
+        on_delete=models.CASCADE, 
+        related_name='user_break_schedules',
+        limit_choices_to={'role': 'USER'}
+    )
+    name = models.CharField(max_length=100, help_text="Break name (e.g., 'Personal Break', 'Medical Appointment')")
+    
+    WEEKDAY_CHOICES = [
+        ('monday', 'Monday'),
+        ('tuesday', 'Tuesday'),
+        ('wednesday', 'Wednesday'),
+        ('thursday', 'Thursday'),
+        ('friday', 'Friday'),
+        ('saturday', 'Saturday'),
+        ('sunday', 'Sunday'),
+        ('daily', 'Every Day'),
+    ]
+    
+    day = models.CharField(max_length=10, choices=WEEKDAY_CHOICES, default='daily')
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    
+    # For extended leave periods
+    is_on_leave = models.BooleanField(default=False, help_text="User is on extended leave")
+    leave_start_date = models.DateField(null=True, blank=True)
+    leave_end_date = models.DateField(null=True, blank=True)
+    leave_reason = models.TextField(blank=True, null=True)
+    
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "User Break Schedule"
+        verbose_name_plural = "User Break Schedules"
+        ordering = ['day', 'start_time']
+    
+    def __str__(self):
+        if self.is_on_leave:
+            return f"{self.user.email} - On Leave ({self.leave_start_date} to {self.leave_end_date})"
+        return f"{self.user.email} - {self.name} - {self.get_day_display()} ({self.start_time}-{self.end_time})"
+
+
 class AdminFeatureRestrictions(models.Model):
     """
     Controls which features are available to each admin company based on their subscription level.

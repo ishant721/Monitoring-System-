@@ -2,8 +2,8 @@
   "capture_interval_seconds": 10,
   "is_activity_monitoring_enabled": true,
   "is_network_monitoring_enabled": true,
-  "is_live_streaming_enabled": false,
-  "is_keystroke_logging_enabled": true,
+  "is_live_streaming_enabled": true,
+  "is_keystroke_logging_enabled": false,
   "schedule": {
     "monday": {
       "start": null,
@@ -22,8 +22,8 @@
       "end": null
     },
     "friday": {
-      "start": "00:00",
-      "end": "23:59"
+      "start": null,
+      "end": null
     },
     "saturday": {
       "start": null,
@@ -34,5 +34,5 @@
       "end": null
     }
   },
-  "last_updated": 1751352687.454765
+  "last_updated": 1751693606.088495
 }
