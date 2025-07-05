@@ -87,7 +87,7 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
         # Use the same API key setting as the HTTP API authentication
         expected_api_key = getattr(settings, 'MASTER_API_KEY', getattr(settings, 'AGENT_API_KEY', ''))
         received_api_key = content.get('api_key')
-        
+
         if content.get('type') == 'auth' and received_api_key == expected_api_key:
             if await self.verify_agent_registration():
                 self.scope['authenticated'] = True
@@ -190,9 +190,29 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
 
         try:
             await self.send_json(control_msg)
-            logger.info(f"Control command sent to agent {self.agent_id}")
+            logger.info(f"Control command sent to agent {self.agent_id}: {control_msg.get('action', 'unknown')}")
         except Exception as e:
             logger.error(f"Failed to send control command to agent {self.agent_id}: {e}")
+
+    async def break_schedule_update(self, event):
+        """Handle break schedule update commands"""
+        if not self.scope.get('authenticated'):
+            logger.warning(f"Cannot send break schedule update to unauthenticated agent {self.agent_id}")
+            return
+
+        break_msg = {
+            'type': 'control',
+            'action': 'update_break_schedules',
+            'company_breaks': event.get('company_breaks', []),
+            'user_break_schedule': event.get('user_break_schedule', []),
+            'is_user_on_leave': event.get('is_user_on_leave', False)
+        }
+
+        try:
+            await self.send_json(break_msg)
+            logger.info(f"Break schedule update sent to agent {self.agent_id}")
+        except Exception as e:
+            logger.error(f"Failed to send break schedule update to agent {self.agent_id}: {e}")
 
     async def process_control_response(self, data):
         logger.info(f"Control response from {self.agent_id}: {data}")

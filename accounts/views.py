@@ -1052,11 +1052,53 @@ def manage_break_schedules_view(request):
                             f"agent_{agent.agent_id}",
                             {
                                 "type": "control_command",
-                                "command": {
-                                    "type": "control",
-                                    "action": "refresh_config",
-                                    "feature_bundle": "global_config"
-                                }
+                                "action": "refresh_config",
+                                "feature_bundle": "global_config"
+                            }
+                        )
+
+                # Send break schedule update to all managed users' agents
+                from monitor_app.models import Agent
+                for user in managed_users:
+                    # Get break schedules for this user
+                    user_breaks = UserBreakSchedule.objects.filter(
+                        user=user,
+                        is_active=True
+                    )
+                    
+                    # Check if user is on leave
+                    is_on_leave = user_breaks.filter(is_on_leave=True).exists()
+                    
+                    # Format user break schedules
+                    user_break_list = []
+                    for schedule in user_breaks:
+                        if not schedule.is_on_leave and schedule.start_time and schedule.end_time:
+                            user_break_list.append({
+                                'name': schedule.name,
+                                'day': schedule.day,
+                                'start': schedule.start_time.strftime('%H:%M'),
+                                'end': schedule.end_time.strftime('%H:%M')
+                            })
+                    
+                    # Format company break schedules
+                    company_break_list = []
+                    for schedule in company_schedules:
+                        company_break_list.append({
+                            'name': schedule.name,
+                            'day': schedule.day,
+                            'start': schedule.start_time.strftime('%H:%M'),
+                            'end': schedule.end_time.strftime('%H:%M')
+                        })
+                    
+                    # Send update to user's agents
+                    for agent in user.agents.all():
+                        async_to_sync(channel_layer.group_send)(
+                            f"agent_{agent.agent_id}",
+                            {
+                                "type": "break_schedule_update",
+                                "company_breaks": company_break_list,
+                                "user_break_schedule": user_break_list,
+                                "is_user_on_leave": is_on_leave
                             }
                         )
 

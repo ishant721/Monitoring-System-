@@ -196,11 +196,11 @@ def agent_status_api_view(request):
     """
     import logging
     logger = logging.getLogger(__name__)
-    
+
     # Debug authentication
     logger.info(f"Agent status request - User: {request.user}, Authenticated: {request.user.is_authenticated}")
     logger.info(f"Authorization header: {request.META.get('HTTP_AUTHORIZATION', 'Not present')}")
-    
+
     user = request.user
     agents_qs = Agent.objects.none()
 
@@ -653,7 +653,7 @@ def get_agent_config(request):
     except Agent.DoesNotExist:
         return Response({'error': 'Agent not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'error': f'Configuration fetch failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': f'Configuration fetch failed: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVERERROR)
 
 @login_required
 @admin_required
@@ -774,6 +774,27 @@ def receive_heartbeat(request):
         data = request.data
         logger.debug(f"Received heartbeat from agent {agent_id}")
 
+        # Check if agent is on break or outside schedule
+        is_on_break = data.get('is_on_break', False)
+        is_agent_active_by_schedule = data.get('is_agent_active_by_schedule', True)
+
+        if is_on_break or not is_agent_active_by_schedule:
+            logger.info(f"Agent {agent_id} on break/outside schedule - skipping database save")
+
+            # Only update basic agent status, don't save to AgentData
+            try:
+                agent = Agent.objects.get(agent_id=agent_id)
+                agent.productive_status = data.get('productive_status', 'On Break')
+                agent.is_recording = False  # Force recording off during breaks
+                agent.is_live_streaming = False  # Force streaming off during breaks
+                agent.save(update_fields=['productive_status', 'is_recording', 'is_live_streaming', 'last_seen'])
+
+                return Response({"status": "break_mode", "message": "Agent on break - no data saved"}, status=status.HTTP_200_OK)
+
+            except Agent.DoesNotExist:
+                return Response({"error": "Agent not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Normal processing when not on break
         # Get or create agent
         try:
             agent = Agent.objects.get(agent_id=agent_id)
@@ -849,7 +870,7 @@ def receive_keylog(request):
             return Response({"error": "Agent ID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data
-        
+
         # Get agent
         try:
             agent = Agent.objects.get(agent_id=agent_id)
