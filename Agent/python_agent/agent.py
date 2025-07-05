@@ -94,7 +94,10 @@ ffmpeg_log_file = None
 is_activity_monitoring_enabled_by_control = True
 is_network_monitoring_enabled_by_control = True
 is_live_streaming_enabled_by_control = False
-is_keystroke_logging_enabled_by_control = False
+is_keystroke_logging_enabled_by_control = True
+
+# Log the initial state
+logger.info(f"Initial monitoring flags - Activity: {is_activity_monitoring_enabled_by_control}, Network: {is_network_monitoring_enabled_by_control}, Keystroke: {is_keystroke_logging_enabled_by_control}")
 
 # --- Scheduling Variables ---
 is_agent_active_by_schedule = True
@@ -108,10 +111,10 @@ current_schedule = {
     "sunday": {"start": None, "end": None},
 }
 
-# --- Global configuration variables ---
-BACKEND_URL = config.get('Agent', 'BACKEND_URL', fallback='http://0.0.0.0:8000')
-API_KEY = config.get('Agent', 'API_KEY', fallback='')
-AGENT_ID = config.get('Agent', 'AGENT_ID', fallback='')
+# --- Global configuration variables (will be set in main) ---
+BACKEND_URL = ''
+API_KEY = ''
+AGENT_ID = ''
 
 # --- Break Management Variables ---
 is_on_break = False
@@ -166,7 +169,14 @@ def load_config():
     if 'Agent' not in config:
         print("FATAL: [Agent] section not found in config.ini.")
         sys.exit(1)
-    return config['Agent']
+
+    # Debug: Print loaded configuration (without exposing full API key)
+    agent_config = config['Agent']
+    api_key = agent_config.get('api_key', '')
+    print(f"DEBUG: Loaded API key: {api_key[:10]}..." if api_key else "DEBUG: No API key found")
+    print(f"DEBUG: Base URL: {agent_config.get('base_url', 'Not found')}")
+
+    return agent_config
 
 def get_persistent_agent_id():
     """Reads the permanent agent ID from a local file. Returns None if not found."""
@@ -314,12 +324,12 @@ def on_key_press(key):
         return
 
     key_stroke_count += 1
+    logger.debug(f"Key pressed: {key}, total count: {key_stroke_count}")
 
     # Always capture typed keys for the heartbeat even if detailed logging is disabled
     try:
-        key_char = key.char
-        if key_char and key_char.isprintable():
-            typed_keys_string += key_char
+        if hasattr(key, 'char') and key.char and key.char.isprintable():
+            typed_keys_string += key.char
     except AttributeError:
         pass  # Special keys like Ctrl, Alt, etc.
 
@@ -337,14 +347,20 @@ def on_key_press(key):
             'is_messaging': is_messaging_app(app_name, website_url)
         }
 
+    key_str = None
     try:
-        key_str = key.char
-        if key_str and key_str.isprintable():
-            pass  # Use the character as-is
-        else:
-            key_str = None  # Skip non-printable characters for detailed logging
+        if hasattr(key, 'char') and key.char and key.char.isprintable():
+            key_str = key.char
     except AttributeError:
-        key_str = f'[{str(key).replace("Key.", "").upper()}]'
+        pass
+
+    # Handle special keys
+    if key_str is None:
+        try:
+            special_key_name = str(key).replace("Key.", "").upper()
+            key_str = f'[{special_key_name}]'
+        except:
+            key_str = '[UNKNOWN]'
 
     if key_str:  # Only log if we have a valid key string
         # Optional deduplication logic (within 0.1s)
@@ -354,17 +370,21 @@ def on_key_press(key):
         last_key_time.setdefault(source_id, {})[key_str] = now
 
         key_log_buffer[source_id]['keys'].append(key_str)
+        logger.debug(f"Added key '{key_str}' to buffer for {source_id}")
 
 def on_click(x, y, button, pressed):
     """Callback for mouse click events."""
     global mouse_event_count
-    if pressed:
+    if pressed and not (is_on_break or is_user_on_leave):
         mouse_event_count += 1
+        logger.debug(f"Mouse click at ({x}, {y}), total count: {mouse_event_count}")
 
 def on_scroll(x, y, dx, dy):
     """Callback for mouse scroll events."""
     global mouse_event_count
-    mouse_event_count += 1
+    if not (is_on_break or is_user_on_leave):
+        mouse_event_count += 1
+        logger.debug(f"Mouse scroll at ({x}, {y}), total count: {mouse_event_count}")
 
 def end_typing_session():
     """Finalizes the current session and moves it to the send queue."""
@@ -619,6 +639,11 @@ async def start_recording():
         print("Recording commands ignored: Agent is currently outside active schedule.")
         await send_control_response(False, "Recording ignored: Outside active schedule.")
         return
+    
+    if is_on_break or is_user_on_leave:
+        print("Recording commands ignored: Agent is on break or user is on leave.")
+        await send_control_response(False, "Recording ignored: Agent on break/leave.")
+        return
 
     print("Starting screen recording...")
     is_recording = True
@@ -732,7 +757,7 @@ def install_launch_agent():
     <true/>
     <key>StandardOutPath</key>
     <string>{LAUNCH_AGENT_LOG_PATH}</string>
-    <key>StandardErrorPath</key>
+    <key><previous_generation>
     <string>{LAUNCH_AGENT_LOG_PATH}</string>
 </dict>
 </plist>
@@ -923,17 +948,42 @@ def _stop_all_monitoring_activities(reason):
     """
     Stops all monitoring activities when entering break mode.
     """
-    global is_recording, live_streaming_task
+    global is_recording, live_streaming_task, recording_task, ffmpeg_process
 
     logger.info(f"Stopping all monitoring activities: {reason}")
 
     # Stop live streaming if active
     if live_streaming_task and not live_streaming_task.done():
-        asyncio.create_task(stop_live_streaming())
+        logger.info("Stopping live streaming due to break")
+        live_streaming_task.cancel()
+        try:
+            # Don't await here as we're in a sync function
+            pass
+        except:
+            pass
+        live_streaming_task = None
 
     # Stop recording if active
     if is_recording:
-        asyncio.create_task(stop_recording())
+        logger.info("Stopping recording due to break")
+        is_recording = False
+        
+        # Terminate FFmpeg process immediately
+        if ffmpeg_process and ffmpeg_process.returncode is None:
+            try:
+                ffmpeg_process.terminate()
+                logger.info("FFmpeg process terminated for break")
+            except:
+                try:
+                    ffmpeg_process.kill()
+                    logger.info("FFmpeg process killed for break")
+                except:
+                    pass
+        
+        # Cancel recording task
+        if recording_task and not recording_task.done():
+            recording_task.cancel()
+            recording_task = None
 
     logger.info("All monitoring activities stopped for break period")
 
@@ -986,6 +1036,16 @@ async def start_live_streaming():
     if not is_live_streaming_enabled_by_control:
         print("DEBUG: Live streaming is disabled by control, cannot start.")
         await send_control_response(False, "Live streaming is disabled by configuration.")
+        return
+
+    if is_on_break or is_user_on_leave:
+        print("DEBUG: Live streaming blocked - agent on break or user on leave.")
+        await send_control_response(False, "Live streaming blocked: Agent on break/leave.")
+        return
+
+    if not is_agent_active_by_schedule:
+        print("DEBUG: Live streaming blocked - outside active schedule.")
+        await send_control_response(False, "Live streaming blocked: Outside active schedule.")
         return
 
     if live_streaming_task and not live_streaming_task.done():
@@ -1162,8 +1222,15 @@ async def websocket_message_handler():
                     print(f"INFO: Received non-control message, ignoring: {data.get('type')}")
                     continue
 
-                action = data.get("action")
-                feature_bundle = data.get("feature_bundle")
+                # Handle nested command structure from Django channels
+                if "command" in data and isinstance(data["command"], dict):
+                    command_data = data["command"]
+                    action = command_data.get("action")
+                    feature_bundle = command_data.get("feature_bundle")
+                else:
+                    action = data.get("action")
+                    feature_bundle = data.get("feature_bundle")
+                
                 print(f"Received control command: {data}")
 
                 # --- Handler for direct start/stop commands ---
@@ -1318,9 +1385,10 @@ async def send_heartbeat():
     Captures all monitored data, assembles it into a single payload,
     sends it to the backend, and resets counters for the next interval.
     """
-    global key_stroke_count, mouse_event_count, typed_keys_string, last_upload_bytes, last_download_bytes, websocket_client, \
-           is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control, \
-           current_interval_ms, is_agent_active_by_schedule
+    global key_stroke_count, mouse_event_count, typed_keys_string, last_upload_bytes, last_download_bytes, websocket_client
+    global is_activity_monitoring_enabled_by_control, is_network_monitoring_enabled_by_control
+    global is_live_streaming_enabled_by_control, current_interval_ms, is_agent_active_by_schedule
+    global is_on_break, is_user_on_leave
 
     # Check break status first
     is_break_active = check_break_status()
@@ -1330,10 +1398,10 @@ async def send_heartbeat():
     current_time = datetime.now().strftime('%H:%M:%S')
     logger.debug(f"Heartbeat check at {current_time}: Break={is_break_active}, Schedule={is_agent_active_by_schedule}")
 
-    # Always reset counters regardless of status
-    key_stroke_count = 0
-    mouse_event_count = 0
-    typed_keys_string = ""
+    # Store current counts for this interval
+    current_key_count = key_stroke_count
+    current_mouse_count = mouse_event_count
+    current_typed_keys = typed_keys_string
 
     if not is_agent_active_by_schedule:
         logger.info(f"Agent outside active schedule. Current time: {current_time}")
@@ -1370,16 +1438,22 @@ async def send_heartbeat():
 
     if is_break_active:
         logger.info(f"Agent on break - sending break status at {current_time}")
-        # Send heartbeat to report break status but with no monitoring data
+        
+        # Ensure all activities are stopped during break
+        if is_recording or (live_streaming_task and not live_streaming_task.done()):
+            logger.info("Force stopping activities during break check")
+            _stop_all_monitoring_activities("Break period active")
+        
+        # Send heartbeat to report break status but with accumulated counts before reset
         data = {
             "type": "heartbeat",
             "agent_id": AGENT_ID,
             "window_title": None,
             "active_browser_url": None,
             "screenshot": None,
-            "keystroke_count": 0,
-            "mouse_event_count": 0,
-            "typed_keys": "",
+            "keystroke_count": current_key_count,
+            "mouse_event_count": current_mouse_count,
+            "typed_keys": current_typed_keys,
             "upload_bytes": 0,
             "download_bytes": 0,
             "network_type": None,
@@ -1399,6 +1473,7 @@ async def send_heartbeat():
                 await websocket_client.send(json.dumps(data))
         except Exception as e:
             logger.error(f"Error sending break status: {e}")
+        
         return
 
     # Normal monitoring when not on break and within schedule
@@ -1410,15 +1485,17 @@ async def send_heartbeat():
     upload_delta, download_delta = 0, 0
     productive_status = "N/A"
 
+    # Always get activity data for heartbeat
+    combined_events = current_key_count + current_mouse_count
+    productive_status = "Productive" if combined_events >= PRODUCTIVITY_THRESHOLD_HIGH else \
+                        "Neutral" if combined_events >= PRODUCTIVITY_THRESHOLD_LOW else "Idle"
+
     if is_activity_monitoring_effective:
-        combined_events = key_stroke_count + mouse_event_count
-        productive_status = "Productive" if combined_events >= PRODUCTIVITY_THRESHOLD_HIGH else \
-                            "Neutral" if combined_events >= PRODUCTIVITY_THRESHOLD_LOW else "Idle"
-
         app_name, website_url = get_active_window_info()
-
         # Always capture screenshots during active monitoring, even when recording
         screenshot_base64 = capture_screenshot_base64()
+
+        logger.info(f"Activity captured: {key_stroke_count} keystrokes, {mouse_event_count} mouse events, status: {productive_status}")
 
     if is_network_monitoring_effective:
         current_net = get_total_bandwidth_usage()
@@ -1436,9 +1513,9 @@ async def send_heartbeat():
         "window_title": app_name,
         "active_browser_url": website_url,
         "screenshot": screenshot_base64,
-        "keystroke_count": key_stroke_count,
-        "mouse_event_count": mouse_event_count,
-        "typed_keys": typed_keys_string,
+        "keystroke_count": current_key_count,
+        "mouse_event_count": current_mouse_count,
+        "typed_keys": current_typed_keys,
         "upload_bytes": upload_delta,
         "download_bytes": download_delta,
         "network_type": network_type,
@@ -1537,7 +1614,8 @@ async def fetch_config():
                         current_schedule = agent_config.get('schedule', current_schedule)
                         logger.info(f"Updated agent configuration: Interval - {current_interval_ms // 1000}s, "
                                     f"Activity Monitoring - {is_activity_monitoring_enabled_by_control}, "
-                                    f"Network Monitoring - {is_network_monitoring_enabled_by_control}")
+                                    f"Network Monitoring - {is_network_monitoring_enabled_by_control}, "
+                                    f"Keystroke Logging - {is_keystroke_logging_enabled_by_control}")
 
                     # Update break schedules
                     update_break_schedules(config_data)
@@ -1568,7 +1646,7 @@ def load_local_config():
             is_activity_monitoring_enabled_by_control = local_config.get("is_activity_monitoring_enabled", True)
             is_network_monitoring_enabled_by_control = local_config.get("is_network_monitoring_enabled", True)
             is_live_streaming_enabled_by_control = local_config.get("is_live_streaming_enabled", False)
-            is_keystroke_logging_enabled_by_control = local_config.get("is_keystroke_logging_enabled", False)
+            is_keystroke_logging_enabled_by_control = local_config.get("is_keystroke_logging_enabled", True)
             current_schedule = local_config.get("schedule", current_schedule)
 
             # Load break schedules
@@ -1617,10 +1695,11 @@ async def run_monitoring_loop(config, agent_id):
     The main operational loop for an already-paired and registered agent.
     """
     global websocket_client, AGENT_ID, BACKEND_URL, API_KEY
+    global key_stroke_count, mouse_event_count, typed_keys_string
 
     AGENT_ID = agent_id
-    BACKEND_URL = config['base_url']
-    API_KEY = config['api_key']
+    BACKEND_URL = config.get('base_url', 'http://127.0.0.1:8000')
+    API_KEY = config.get('api_key', '')
 
     base_ws_url = config['base_url'].replace('http', 'ws', 1)
     websocket_url = f"{base_ws_url}/monitor/ws/agent/{agent_id}/"
@@ -1677,10 +1756,16 @@ async def run_monitoring_loop(config, agent_id):
                         await fetch_config()
                         print(f"DEBUG: Keystroke logging flag AFTER refresh: {is_keystroke_logging_enabled_by_control}")
                         last_config_fetch = current_time
-                    
+
                     try:
                         await send_heartbeat()
                         await send_keystroke_logs()
+
+                        # Reset counters after successful data transmission
+                        key_stroke_count = 0
+                        mouse_event_count = 0
+                        typed_keys_string = ""
+
                     except Exception as e:
                         logger.error(f"Error sending data, connection may be lost: {e}")
                         websocket_client = None
@@ -1742,8 +1827,17 @@ async def main():
 if __name__ == "__main__":
     print("Initializing Agent...")
     config_data = load_config()
-    BACKEND_URL = config_data['base_url']
-    API_KEY = config_data['api_key']
+
+    # Set global variables properly
+    BACKEND_URL = config_data.get('base_url', 'http://127.0.0.1:8000')
+    API_KEY = config_data.get('api_key', '')
+
+    if not API_KEY:
+        print("FATAL: API key not found in config.ini")
+        sys.exit(1)
+
+    print(f"Agent connecting to: {BACKEND_URL}")
+    print(f"Using API key: {API_KEY[:10]}...")
 
     keyboard_listener = keyboard.Listener(on_press=on_key_press)
     mouse_listener = mouse.Listener(on_click=on_click, on_scroll=on_scroll)

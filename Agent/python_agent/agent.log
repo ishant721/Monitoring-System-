@@ -1705,3 +1705,448 @@
 2025-07-05 18:15:17,470 - INFO - User is not on leave
 2025-07-05 18:15:17,470 - INFO - === END BREAK SCHEDULE UPDATE ===
 2025-07-05 18:15:17,471 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:15:32,481 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:15:47,486 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:16:02,492 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:16:17,499 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:16:32,505 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:16:47,510 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:17:02,515 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:17:17,520 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:17:32,524 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:17:47,530 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:18:02,534 - ERROR - Unexpected error in monitoring loop: [Errno 61] Connect call failed ('127.0.0.1', 8000). Retrying in 15s...
+2025-07-05 18:18:08,030 - INFO - Agent stopped by user
+2025-07-05 18:18:08,030 - INFO - Agent process terminated
+2025-07-05 18:18:09,802 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:18:09,812 - INFO - Fetching initial configuration from server...
+2025-07-05 18:18:09,812 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:18:09,822 - INFO - Config fetched successfully
+2025-07-05 18:18:09,822 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:09,822 - INFO - No company break schedules configured
+2025-07-05 18:18:09,822 - INFO - No user-specific break schedules configured
+2025-07-05 18:18:09,822 - INFO - User is not on leave
+2025-07-05 18:18:09,822 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:09,822 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:18:24,825 - INFO - Fetching initial configuration from server...
+2025-07-05 18:18:24,825 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:18:24,834 - INFO - Config fetched successfully
+2025-07-05 18:18:24,834 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:24,834 - INFO - No company break schedules configured
+2025-07-05 18:18:24,834 - INFO - No user-specific break schedules configured
+2025-07-05 18:18:24,834 - INFO - User is not on leave
+2025-07-05 18:18:24,834 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:24,834 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:18:39,842 - INFO - Fetching initial configuration from server...
+2025-07-05 18:18:39,843 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:18:39,854 - INFO - Config fetched successfully
+2025-07-05 18:18:39,854 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:39,854 - INFO - No company break schedules configured
+2025-07-05 18:18:39,854 - INFO - No user-specific break schedules configured
+2025-07-05 18:18:39,854 - INFO - User is not on leave
+2025-07-05 18:18:39,854 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:39,855 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:18:54,860 - INFO - Fetching initial configuration from server...
+2025-07-05 18:18:54,862 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:18:54,875 - INFO - Config fetched successfully
+2025-07-05 18:18:54,875 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:54,875 - INFO - No company break schedules configured
+2025-07-05 18:18:54,875 - INFO - No user-specific break schedules configured
+2025-07-05 18:18:54,875 - INFO - User is not on leave
+2025-07-05 18:18:54,875 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:18:54,875 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:19:09,884 - INFO - Fetching initial configuration from server...
+2025-07-05 18:19:09,885 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:19:09,901 - INFO - Config fetched successfully
+2025-07-05 18:19:09,901 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:09,901 - INFO - No company break schedules configured
+2025-07-05 18:19:09,901 - INFO - No user-specific break schedules configured
+2025-07-05 18:19:09,901 - INFO - User is not on leave
+2025-07-05 18:19:09,901 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:09,901 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:19:24,910 - INFO - Fetching initial configuration from server...
+2025-07-05 18:19:24,911 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:19:24,925 - INFO - Config fetched successfully
+2025-07-05 18:19:24,925 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:24,925 - INFO - No company break schedules configured
+2025-07-05 18:19:24,925 - INFO - No user-specific break schedules configured
+2025-07-05 18:19:24,925 - INFO - User is not on leave
+2025-07-05 18:19:24,925 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:24,926 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:19:39,932 - INFO - Fetching initial configuration from server...
+2025-07-05 18:19:39,933 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:19:39,943 - INFO - Config fetched successfully
+2025-07-05 18:19:39,943 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:39,943 - INFO - No company break schedules configured
+2025-07-05 18:19:39,943 - INFO - No user-specific break schedules configured
+2025-07-05 18:19:39,943 - INFO - User is not on leave
+2025-07-05 18:19:39,943 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:39,943 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:19:54,958 - INFO - Fetching initial configuration from server...
+2025-07-05 18:19:54,960 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:19:54,988 - INFO - Config fetched successfully
+2025-07-05 18:19:54,988 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:54,988 - INFO - No company break schedules configured
+2025-07-05 18:19:54,988 - INFO - No user-specific break schedules configured
+2025-07-05 18:19:54,988 - INFO - User is not on leave
+2025-07-05 18:19:54,988 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:19:54,988 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:19:58,960 - INFO - Agent stopped by user
+2025-07-05 18:19:58,960 - INFO - Agent process terminated
+2025-07-05 18:20:01,428 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:20:01,437 - INFO - Fetching initial configuration from server...
+2025-07-05 18:20:01,437 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:20:01,450 - INFO - Config fetched successfully
+2025-07-05 18:20:01,450 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:20:01,450 - INFO - No company break schedules configured
+2025-07-05 18:20:01,450 - INFO - No user-specific break schedules configured
+2025-07-05 18:20:01,450 - INFO - User is not on leave
+2025-07-05 18:20:01,450 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:22:18,942 - WARNING - WebSocket connection lost during monitoring loop, will reconnect
+2025-07-05 18:22:33,964 - INFO - Fetching initial configuration from server...
+2025-07-05 18:22:33,965 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:22:34,029 - INFO - Config fetched successfully
+2025-07-05 18:22:34,030 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:22:34,030 - INFO - No company break schedules configured
+2025-07-05 18:22:34,030 - INFO - No user-specific break schedules configured
+2025-07-05 18:22:34,030 - INFO - User is not on leave
+2025-07-05 18:22:34,030 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:22:43,671 - INFO - Agent stopped by user
+2025-07-05 18:22:43,672 - INFO - Agent process terminated
+2025-07-05 18:22:45,107 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:22:45,117 - INFO - Fetching initial configuration from server...
+2025-07-05 18:22:45,117 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:22:45,123 - INFO - Config fetched successfully
+2025-07-05 18:22:45,123 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:22:45,123 - INFO - No company break schedules configured
+2025-07-05 18:22:45,123 - INFO - No user-specific break schedules configured
+2025-07-05 18:22:45,123 - INFO - User is not on leave
+2025-07-05 18:22:45,123 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:23:53,005 - INFO - Processing global config update...
+2025-07-05 18:23:53,006 - INFO - Updated interval from global config: 10s
+2025-07-05 18:23:53,006 - INFO - Updated activity monitoring from global config: True
+2025-07-05 18:23:53,007 - INFO - Updated network monitoring from global config: True
+2025-07-05 18:23:53,007 - INFO - Updated live streaming flag from global config: True
+2025-07-05 18:23:53,007 - INFO - Reconciling agent state with new global configuration...
+2025-07-05 18:23:53,007 - INFO - Config requires live stream ON, starting...
+2025-07-05 18:24:11,377 - INFO - Processing global config update...
+2025-07-05 18:24:11,378 - INFO - Updated interval from global config: 10s
+2025-07-05 18:24:11,378 - INFO - Updated activity monitoring from global config: True
+2025-07-05 18:24:11,378 - INFO - Updated network monitoring from global config: True
+2025-07-05 18:24:11,378 - INFO - Updated live streaming flag from global config: False
+2025-07-05 18:24:11,378 - INFO - Reconciling agent state with new global configuration...
+2025-07-05 18:24:11,378 - INFO - Config requires live stream OFF, stopping...
+2025-07-05 18:27:51,454 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:27:51,490 - INFO - Config fetched successfully
+2025-07-05 18:27:51,490 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:27:51,490 - INFO - No company break schedules configured
+2025-07-05 18:27:51,490 - INFO - No user-specific break schedules configured
+2025-07-05 18:27:51,490 - INFO - User is not on leave
+2025-07-05 18:27:51,491 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:28:08,145 - INFO - Agent stopped by user
+2025-07-05 18:28:08,146 - INFO - Agent process terminated
+2025-07-05 18:28:50,905 - INFO - Initial monitoring flags - Activity: True, Network: True, Keystroke: False
+2025-07-05 18:28:50,907 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:28:50,921 - INFO - Fetching initial configuration from server...
+2025-07-05 18:28:50,921 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:28:50,934 - INFO - Config fetched successfully
+2025-07-05 18:28:50,934 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:28:50,934 - INFO - No company break schedules configured
+2025-07-05 18:28:50,934 - INFO - No user-specific break schedules configured
+2025-07-05 18:28:50,934 - INFO - User is not on leave
+2025-07-05 18:28:50,934 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:28:51,351 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:29:02,003 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:29:12,612 - INFO - Activity captured: 0 keystrokes, 34 mouse events, status: Idle
+2025-07-05 18:29:23,221 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:29:33,772 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:29:44,370 - INFO - Activity captured: 0 keystrokes, 1 mouse events, status: Idle
+2025-07-05 18:29:54,953 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:30:05,572 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:30:16,175 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:30:26,765 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:30:37,522 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:30:48,131 - INFO - Activity captured: 0 keystrokes, 35 mouse events, status: Idle
+2025-07-05 18:30:58,722 - INFO - Activity captured: 0 keystrokes, 1 mouse events, status: Idle
+2025-07-05 18:31:09,156 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:31:15,392 - INFO - Agent stopped by user
+2025-07-05 18:31:15,392 - INFO - Agent process terminated
+2025-07-05 18:31:17,133 - INFO - Initial monitoring flags - Activity: True, Network: True, Keystroke: True
+2025-07-05 18:31:17,135 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:31:17,148 - INFO - Fetching initial configuration from server...
+2025-07-05 18:31:17,148 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:31:17,155 - INFO - Config fetched successfully
+2025-07-05 18:31:17,155 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:31:17,155 - INFO - No company break schedules configured
+2025-07-05 18:31:17,155 - INFO - No user-specific break schedules configured
+2025-07-05 18:31:17,155 - INFO - User is not on leave
+2025-07-05 18:31:17,155 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:31:17,564 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:31:28,046 - INFO - Activity captured: 127 keystrokes, 0 mouse events, status: Productive
+2025-07-05 18:31:38,714 - INFO - Activity captured: 226 keystrokes, 1 mouse events, status: Productive
+2025-07-05 18:31:49,291 - INFO - Activity captured: 226 keystrokes, 42 mouse events, status: Productive
+2025-07-05 18:31:59,855 - INFO - Activity captured: 226 keystrokes, 139 mouse events, status: Productive
+2025-07-05 18:32:10,436 - INFO - Activity captured: 226 keystrokes, 335 mouse events, status: Productive
+2025-07-05 18:32:20,973 - INFO - Activity captured: 226 keystrokes, 461 mouse events, status: Productive
+2025-07-05 18:32:31,541 - INFO - Activity captured: 232 keystrokes, 467 mouse events, status: Productive
+2025-07-05 18:32:42,091 - INFO - Activity captured: 232 keystrokes, 498 mouse events, status: Productive
+2025-07-05 18:32:52,650 - INFO - Activity captured: 242 keystrokes, 528 mouse events, status: Productive
+2025-07-05 18:33:03,307 - INFO - Activity captured: 242 keystrokes, 535 mouse events, status: Productive
+2025-07-05 18:33:13,754 - INFO - Activity captured: 242 keystrokes, 599 mouse events, status: Productive
+2025-07-05 18:33:24,297 - INFO - Activity captured: 242 keystrokes, 630 mouse events, status: Productive
+2025-07-05 18:33:34,829 - INFO - Activity captured: 242 keystrokes, 750 mouse events, status: Productive
+2025-07-05 18:33:45,484 - INFO - Activity captured: 242 keystrokes, 757 mouse events, status: Productive
+2025-07-05 18:33:56,059 - INFO - Activity captured: 242 keystrokes, 785 mouse events, status: Productive
+2025-07-05 18:34:06,644 - INFO - Activity captured: 242 keystrokes, 1204 mouse events, status: Productive
+2025-07-05 18:34:17,221 - INFO - Activity captured: 242 keystrokes, 1209 mouse events, status: Productive
+2025-07-05 18:34:27,836 - INFO - Activity captured: 244 keystrokes, 1211 mouse events, status: Productive
+2025-07-05 18:34:38,435 - INFO - Activity captured: 274 keystrokes, 1214 mouse events, status: Productive
+2025-07-05 18:34:49,039 - INFO - Activity captured: 313 keystrokes, 1214 mouse events, status: Productive
+2025-07-05 18:34:59,624 - INFO - Activity captured: 351 keystrokes, 1214 mouse events, status: Productive
+2025-07-05 18:35:10,211 - INFO - Activity captured: 392 keystrokes, 1214 mouse events, status: Productive
+2025-07-05 18:35:20,800 - INFO - Activity captured: 412 keystrokes, 1215 mouse events, status: Productive
+2025-07-05 18:35:31,367 - INFO - Activity captured: 412 keystrokes, 1217 mouse events, status: Productive
+2025-07-05 18:35:41,952 - INFO - Activity captured: 412 keystrokes, 1218 mouse events, status: Productive
+2025-07-05 18:35:52,554 - INFO - Activity captured: 412 keystrokes, 1218 mouse events, status: Productive
+2025-07-05 18:36:03,160 - INFO - Activity captured: 412 keystrokes, 1218 mouse events, status: Productive
+2025-07-05 18:36:13,759 - INFO - Activity captured: 412 keystrokes, 1256 mouse events, status: Productive
+2025-07-05 18:36:23,809 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:36:23,828 - INFO - Config fetched successfully
+2025-07-05 18:36:23,828 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:36:23,828 - INFO - No company break schedules configured
+2025-07-05 18:36:23,828 - INFO - No user-specific break schedules configured
+2025-07-05 18:36:23,829 - INFO - User is not on leave
+2025-07-05 18:36:23,829 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:36:24,374 - INFO - Activity captured: 412 keystrokes, 1316 mouse events, status: Productive
+2025-07-05 18:36:34,982 - INFO - Activity captured: 434 keystrokes, 1317 mouse events, status: Productive
+2025-07-05 18:36:45,617 - INFO - Activity captured: 452 keystrokes, 1317 mouse events, status: Productive
+2025-07-05 18:36:56,239 - INFO - Activity captured: 482 keystrokes, 1317 mouse events, status: Productive
+2025-07-05 18:37:06,863 - INFO - Activity captured: 495 keystrokes, 1317 mouse events, status: Productive
+2025-07-05 18:37:17,447 - INFO - Activity captured: 495 keystrokes, 1317 mouse events, status: Productive
+2025-07-05 18:37:28,054 - INFO - Activity captured: 495 keystrokes, 1317 mouse events, status: Productive
+2025-07-05 18:37:38,624 - INFO - Activity captured: 495 keystrokes, 1471 mouse events, status: Productive
+2025-07-05 18:37:49,246 - INFO - Activity captured: 495 keystrokes, 1686 mouse events, status: Productive
+2025-07-05 18:37:59,854 - INFO - Activity captured: 495 keystrokes, 1686 mouse events, status: Productive
+2025-07-05 18:38:10,436 - INFO - Activity captured: 495 keystrokes, 1686 mouse events, status: Productive
+2025-07-05 18:38:21,128 - INFO - Activity captured: 495 keystrokes, 1686 mouse events, status: Productive
+2025-07-05 18:38:31,748 - INFO - Activity captured: 495 keystrokes, 1686 mouse events, status: Productive
+2025-07-05 18:38:42,338 - INFO - Activity captured: 495 keystrokes, 1689 mouse events, status: Productive
+2025-07-05 18:38:53,062 - INFO - Activity captured: 501 keystrokes, 1691 mouse events, status: Productive
+2025-07-05 18:39:03,760 - INFO - Activity captured: 505 keystrokes, 1732 mouse events, status: Productive
+2025-07-05 18:39:13,611 - INFO - Agent stopped by user
+2025-07-05 18:39:13,611 - INFO - Agent process terminated
+2025-07-05 18:39:15,189 - INFO - Initial monitoring flags - Activity: True, Network: True, Keystroke: True
+2025-07-05 18:39:15,191 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:39:15,201 - INFO - Fetching initial configuration from server...
+2025-07-05 18:39:15,201 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:39:15,208 - INFO - Config fetched successfully
+2025-07-05 18:39:15,208 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:39:15,208 - INFO - No company break schedules configured
+2025-07-05 18:39:15,208 - INFO - No user-specific break schedules configured
+2025-07-05 18:39:15,208 - INFO - User is not on leave
+2025-07-05 18:39:15,208 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:39:15,620 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:39:26,258 - INFO - Activity captured: 89 keystrokes, 1 mouse events, status: Productive
+2025-07-05 18:39:36,707 - INFO - Activity captured: 89 keystrokes, 3 mouse events, status: Productive
+2025-07-05 18:39:47,144 - INFO - Activity captured: 89 keystrokes, 5 mouse events, status: Productive
+2025-07-05 18:39:57,739 - INFO - Activity captured: 89 keystrokes, 8 mouse events, status: Productive
+2025-07-05 18:40:08,327 - INFO - Activity captured: 97 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:40:18,953 - INFO - Activity captured: 112 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:40:29,561 - INFO - Activity captured: 135 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:40:40,172 - INFO - Activity captured: 149 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:40:50,776 - INFO - Activity captured: 183 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:41:01,366 - INFO - Activity captured: 224 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:41:11,950 - INFO - Activity captured: 228 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:41:22,540 - INFO - Activity captured: 228 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:41:33,149 - INFO - Activity captured: 228 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:41:43,791 - INFO - Activity captured: 228 keystrokes, 11 mouse events, status: Productive
+2025-07-05 18:41:54,244 - INFO - Activity captured: 233 keystrokes, 14 mouse events, status: Productive
+2025-07-05 18:41:58,123 - INFO - Agent stopped by user
+2025-07-05 18:41:58,123 - INFO - Agent process terminated
+2025-07-05 18:41:59,987 - INFO - Initial monitoring flags - Activity: True, Network: True, Keystroke: True
+2025-07-05 18:41:59,989 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:41:59,999 - INFO - Fetching initial configuration from server...
+2025-07-05 18:41:59,999 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:42:00,009 - INFO - Config fetched successfully
+2025-07-05 18:42:00,009 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:42:00,009 - INFO - No company break schedules configured
+2025-07-05 18:42:00,009 - INFO - No user-specific break schedules configured
+2025-07-05 18:42:00,009 - INFO - User is not on leave
+2025-07-05 18:42:00,009 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:42:00,423 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:42:11,297 - INFO - Activity captured: 73 keystrokes, 2 mouse events, status: Productive
+2025-07-05 18:42:21,915 - INFO - Activity captured: 158 keystrokes, 26 mouse events, status: Productive
+2025-07-05 18:42:32,604 - INFO - Activity captured: 158 keystrokes, 27 mouse events, status: Productive
+2025-07-05 18:42:43,184 - INFO - Activity captured: 158 keystrokes, 28 mouse events, status: Productive
+2025-07-05 18:42:53,830 - INFO - Activity captured: 158 keystrokes, 33 mouse events, status: Productive
+2025-07-05 18:43:04,441 - INFO - Activity captured: 158 keystrokes, 135 mouse events, status: Productive
+2025-07-05 18:43:15,094 - INFO - Activity captured: 197 keystrokes, 136 mouse events, status: Productive
+2025-07-05 18:43:25,636 - INFO - Activity captured: 212 keystrokes, 169 mouse events, status: Productive
+2025-07-05 18:43:36,221 - INFO - Activity captured: 212 keystrokes, 176 mouse events, status: Productive
+2025-07-05 18:43:46,650 - INFO - Activity captured: 212 keystrokes, 199 mouse events, status: Productive
+2025-07-05 18:43:57,243 - INFO - Activity captured: 212 keystrokes, 200 mouse events, status: Productive
+2025-07-05 18:44:07,891 - INFO - Activity captured: 212 keystrokes, 239 mouse events, status: Productive
+2025-07-05 18:44:18,460 - INFO - Activity captured: 212 keystrokes, 241 mouse events, status: Productive
+2025-07-05 18:44:28,971 - INFO - Activity captured: 212 keystrokes, 386 mouse events, status: Productive
+2025-07-05 18:44:39,411 - INFO - Activity captured: 212 keystrokes, 387 mouse events, status: Productive
+2025-07-05 18:44:49,991 - INFO - Activity captured: 212 keystrokes, 408 mouse events, status: Productive
+2025-07-05 18:45:00,582 - INFO - Activity captured: 212 keystrokes, 422 mouse events, status: Productive
+2025-07-05 18:45:11,048 - INFO - Activity captured: 217 keystrokes, 744 mouse events, status: Productive
+2025-07-05 18:45:14,919 - INFO - Agent stopped by user
+2025-07-05 18:45:14,919 - INFO - Agent process terminated
+2025-07-05 18:45:16,542 - INFO - Initial monitoring flags - Activity: True, Network: True, Keystroke: True
+2025-07-05 18:45:16,543 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:45:16,556 - INFO - Fetching initial configuration from server...
+2025-07-05 18:45:16,556 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:45:16,564 - INFO - Config fetched successfully
+2025-07-05 18:45:16,565 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:45:16,565 - INFO - No company break schedules configured
+2025-07-05 18:45:16,565 - INFO - No user-specific break schedules configured
+2025-07-05 18:45:16,565 - INFO - User is not on leave
+2025-07-05 18:45:16,565 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:45:16,975 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:45:27,628 - INFO - Activity captured: 36 keystrokes, 1 mouse events, status: Productive
+2025-07-05 18:45:38,243 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 18:45:48,797 - INFO - Activity captured: 0 keystrokes, 1 mouse events, status: Idle
+2025-07-05 18:45:59,323 - INFO - Activity captured: 7 keystrokes, 38 mouse events, status: Productive
+2025-07-05 18:46:09,863 - INFO - Activity captured: 0 keystrokes, 5 mouse events, status: Neutral
+2025-07-05 18:46:20,317 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 18:46:30,780 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:46:41,361 - INFO - Activity captured: 6 keystrokes, 4 mouse events, status: Productive
+2025-07-05 18:46:51,778 - INFO - Activity captured: 0 keystrokes, 5 mouse events, status: Neutral
+2025-07-05 18:47:02,332 - INFO - Activity captured: 7 keystrokes, 5 mouse events, status: Productive
+2025-07-05 18:47:12,940 - INFO - Activity captured: 16 keystrokes, 0 mouse events, status: Productive
+2025-07-05 18:47:23,510 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:47:34,111 - INFO - Activity captured: 0 keystrokes, 18 mouse events, status: Idle
+2025-07-05 18:47:44,708 - INFO - Activity captured: 0 keystrokes, 88 mouse events, status: Productive
+2025-07-05 18:47:55,284 - INFO - Activity captured: 6 keystrokes, 3 mouse events, status: Neutral
+2025-07-05 18:48:05,939 - INFO - Activity captured: 0 keystrokes, 1 mouse events, status: Idle
+2025-07-05 18:48:16,589 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:48:27,021 - INFO - Activity captured: 3 keystrokes, 77 mouse events, status: Productive
+2025-07-05 18:48:37,478 - INFO - Activity captured: 0 keystrokes, 292 mouse events, status: Productive
+2025-07-05 18:48:46,138 - INFO - Agent stopped by user
+2025-07-05 18:48:46,139 - INFO - Agent process terminated
+2025-07-05 18:48:47,631 - INFO - Initial monitoring flags - Activity: True, Network: True, Keystroke: True
+2025-07-05 18:48:47,633 - INFO - Agent starting with existing ID: 5ef345ae-5426-4e73-a02e-26668bb730f6
+2025-07-05 18:48:47,644 - INFO - Fetching initial configuration from server...
+2025-07-05 18:48:47,644 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:48:47,651 - INFO - Config fetched successfully
+2025-07-05 18:48:47,651 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:48:47,651 - INFO - No company break schedules configured
+2025-07-05 18:48:47,651 - INFO - No user-specific break schedules configured
+2025-07-05 18:48:47,651 - INFO - User is not on leave
+2025-07-05 18:48:47,651 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:48:48,040 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:48:58,599 - INFO - Activity captured: 6 keystrokes, 3 mouse events, status: Neutral
+2025-07-05 18:49:08,008 - INFO - Received command to refresh configuration from server
+2025-07-05 18:49:08,009 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:49:08,034 - INFO - Config fetched successfully
+2025-07-05 18:49:08,034 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:49:08,034 - INFO - No company break schedules configured
+2025-07-05 18:49:08,035 - INFO - No user-specific break schedules configured
+2025-07-05 18:49:08,035 - INFO - User is not on leave
+2025-07-05 18:49:08,035 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:49:08,035 - INFO - After config refresh at 18:49:08: Break status = False
+2025-07-05 18:49:09,261 - INFO - Activity captured: 0 keystrokes, 7 mouse events, status: Neutral
+2025-07-05 18:49:19,710 - INFO - Activity captured: 0 keystrokes, 10 mouse events, status: Productive
+2025-07-05 18:49:30,135 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:49:40,568 - INFO - Activity captured: 0 keystrokes, 14 mouse events, status: Productive
+2025-07-05 18:49:51,115 - INFO - Activity captured: 0 keystrokes, 88 mouse events, status: Productive
+2025-07-05 18:50:01,505 - INFO - Activity captured: 0 keystrokes, 2 mouse events, status: Neutral
+2025-07-05 18:50:12,062 - INFO - Activity captured: 6 keystrokes, 33 mouse events, status: Productive
+2025-07-05 18:50:19,973 - INFO - Received command to refresh configuration from server
+2025-07-05 18:50:19,973 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:50:20,004 - INFO - Config fetched successfully
+2025-07-05 18:50:20,004 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:50:20,004 - INFO - No company break schedules configured
+2025-07-05 18:50:20,004 - INFO - No user-specific break schedules configured
+2025-07-05 18:50:20,004 - INFO - User is not on leave
+2025-07-05 18:50:20,004 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:50:20,005 - INFO - After config refresh at 18:50:20: Break status = False
+2025-07-05 18:50:22,508 - INFO - Activity captured: 0 keystrokes, 32 mouse events, status: Productive
+2025-07-05 18:50:32,951 - INFO - Activity captured: 0 keystrokes, 10 mouse events, status: Neutral
+2025-07-05 18:50:43,356 - INFO - Activity captured: 0 keystrokes, 29 mouse events, status: Productive
+2025-07-05 18:50:53,782 - INFO - Activity captured: 0 keystrokes, 62 mouse events, status: Productive
+2025-07-05 18:51:04,203 - INFO - Activity captured: 0 keystrokes, 25 mouse events, status: Productive
+2025-07-05 18:51:14,743 - INFO - Activity captured: 0 keystrokes, 117 mouse events, status: Productive
+2025-07-05 18:51:25,411 - INFO - Activity captured: 0 keystrokes, 34 mouse events, status: Productive
+2025-07-05 18:51:36,078 - INFO - Activity captured: 0 keystrokes, 64 mouse events, status: Productive
+2025-07-05 18:51:47,302 - INFO - Activity captured: 0 keystrokes, 71 mouse events, status: Productive
+2025-07-05 18:52:03,652 - INFO - Activity captured: 10 keystrokes, 3 mouse events, status: Productive
+2025-07-05 18:52:14,233 - INFO - Activity captured: 0 keystrokes, 7 mouse events, status: Neutral
+2025-07-05 18:52:24,857 - INFO - Activity captured: 0 keystrokes, 69 mouse events, status: Productive
+2025-07-05 18:52:35,312 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:52:45,822 - INFO - Activity captured: 0 keystrokes, 97 mouse events, status: Productive
+2025-07-05 18:52:56,409 - INFO - Activity captured: 0 keystrokes, 39 mouse events, status: Productive
+2025-07-05 18:53:07,038 - INFO - Activity captured: 0 keystrokes, 6 mouse events, status: Neutral
+2025-07-05 18:53:17,612 - INFO - Activity captured: 0 keystrokes, 52 mouse events, status: Productive
+2025-07-05 18:53:28,153 - INFO - Activity captured: 6 keystrokes, 11 mouse events, status: Productive
+2025-07-05 18:53:32,473 - INFO - Received command to refresh configuration from server
+2025-07-05 18:53:32,474 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:53:32,502 - INFO - Config fetched successfully
+2025-07-05 18:53:32,502 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:53:32,502 - INFO - No company break schedules configured
+2025-07-05 18:53:32,502 - INFO - No user-specific break schedules configured
+2025-07-05 18:53:32,502 - INFO - User is not on leave
+2025-07-05 18:53:32,502 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:53:32,503 - INFO - After config refresh at 18:53:32: Break status = False
+2025-07-05 18:53:38,579 - INFO - Activity captured: 0 keystrokes, 5 mouse events, status: Neutral
+2025-07-05 18:53:48,628 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 18:53:48,652 - INFO - Config fetched successfully
+2025-07-05 18:53:48,652 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 18:53:48,652 - INFO - No company break schedules configured
+2025-07-05 18:53:48,652 - INFO - No user-specific break schedules configured
+2025-07-05 18:53:48,652 - INFO - User is not on leave
+2025-07-05 18:53:48,652 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 18:53:49,025 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:53:59,470 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:54:09,899 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 18:54:20,615 - INFO - Activity captured: 31 keystrokes, 3 mouse events, status: Productive
+2025-07-05 18:54:31,072 - INFO - Activity captured: 0 keystrokes, 3 mouse events, status: Neutral
+2025-07-05 18:54:41,614 - INFO - Activity captured: 6 keystrokes, 5 mouse events, status: Productive
+2025-07-05 18:54:52,187 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 18:55:02,750 - INFO - Activity captured: 0 keystrokes, 3 mouse events, status: Neutral
+2025-07-05 19:10:13,283 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 19:10:13,331 - INFO - Config fetched successfully
+2025-07-05 19:10:13,331 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 19:10:13,331 - INFO - No company break schedules configured
+2025-07-05 19:10:13,331 - INFO - No user-specific break schedules configured
+2025-07-05 19:10:13,331 - INFO - User is not on leave
+2025-07-05 19:10:13,331 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 19:10:13,819 - INFO - Activity captured: 0 keystrokes, 1 mouse events, status: Idle
+2025-07-05 19:12:32,543 - INFO - Activity captured: 0 keystrokes, 1 mouse events, status: Idle
+2025-07-05 19:12:43,126 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:12:53,745 - INFO - Activity captured: 0 keystrokes, 6 mouse events, status: Neutral
+2025-07-05 19:13:04,402 - INFO - Activity captured: 7 keystrokes, 0 mouse events, status: Neutral
+2025-07-05 19:13:15,064 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:13:26,212 - INFO - Activity captured: 0 keystrokes, 3 mouse events, status: Neutral
+2025-07-05 19:13:36,903 - INFO - Activity captured: 2 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:13:47,607 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:13:58,230 - INFO - Activity captured: 0 keystrokes, 10 mouse events, status: Productive
+2025-07-05 19:14:08,817 - INFO - Activity captured: 0 keystrokes, 9 mouse events, status: Neutral
+2025-07-05 19:14:19,505 - INFO - Activity captured: 0 keystrokes, 7 mouse events, status: Neutral
+2025-07-05 19:14:30,199 - INFO - Activity captured: 0 keystrokes, 10 mouse events, status: Neutral
+2025-07-05 19:14:40,778 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:14:51,437 - INFO - Activity captured: 0 keystrokes, 8 mouse events, status: Neutral
+2025-07-05 19:15:01,999 - INFO - Activity captured: 0 keystrokes, 24 mouse events, status: Productive
+2025-07-05 19:15:12,599 - INFO - Activity captured: 0 keystrokes, 6 mouse events, status: Neutral
+2025-07-05 19:15:22,652 - INFO - Fetching config from: http://127.0.0.1:8000/monitor/api/config/
+2025-07-05 19:15:22,678 - INFO - Config fetched successfully
+2025-07-05 19:15:22,679 - INFO - === BREAK SCHEDULE UPDATE ===
+2025-07-05 19:15:22,679 - INFO - No company break schedules configured
+2025-07-05 19:15:22,679 - INFO - No user-specific break schedules configured
+2025-07-05 19:15:22,679 - INFO - User is not on leave
+2025-07-05 19:15:22,679 - INFO - === END BREAK SCHEDULE UPDATE ===
+2025-07-05 19:15:23,225 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 19:15:33,829 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 19:15:44,408 - INFO - Activity captured: 0 keystrokes, 0 mouse events, status: Idle
+2025-07-05 19:15:55,003 - INFO - Activity captured: 11 keystrokes, 4 mouse events, status: Productive
+2025-07-05 19:16:05,571 - INFO - Activity captured: 0 keystrokes, 6 mouse events, status: Neutral
+2025-07-05 19:16:16,127 - INFO - Activity captured: 0 keystrokes, 46 mouse events, status: Productive
+2025-07-05 19:16:26,684 - INFO - Activity captured: 0 keystrokes, 6 mouse events, status: Neutral
+2025-07-05 19:16:37,303 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:16:47,869 - INFO - Activity captured: 0 keystrokes, 2 mouse events, status: Neutral
+2025-07-05 19:16:58,447 - INFO - Activity captured: 0 keystrokes, 3 mouse events, status: Neutral
+2025-07-05 19:17:09,063 - INFO - Activity captured: 16 keystrokes, 0 mouse events, status: Productive
+2025-07-05 19:17:19,810 - INFO - Activity captured: 0 keystrokes, 4 mouse events, status: Neutral
+2025-07-05 19:17:29,870 - WARNING - WebSocket connection lost during monitoring loop, will reconnect

@@ -84,7 +84,11 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=4006, reason="Pairing failed. Invalid token or ID already exists.")
 
     async def handle_authentication(self, content):
-        if content.get('type') == 'auth' and content.get('api_key') == settings.AGENT_API_KEY:
+        # Use the same API key setting as the HTTP API authentication
+        expected_api_key = getattr(settings, 'MASTER_API_KEY', getattr(settings, 'AGENT_API_KEY', ''))
+        received_api_key = content.get('api_key')
+        
+        if content.get('type') == 'auth' and received_api_key == expected_api_key:
             if await self.verify_agent_registration():
                 self.scope['authenticated'] = True
                 logger.info(f"SUCCESS: Agent {self.agent_id} authenticated.")
@@ -93,7 +97,7 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
                 logger.warning(f"Auth failed for agent '{self.agent_id}': Not found in database.")
                 await self.close(code=4004, reason="Unregistered agent ID")
         else:
-            logger.warning(f"Auth failed for agent '{self.agent_id}': Invalid type or API key.")
+            logger.warning(f"Auth failed for agent '{self.agent_id}': Invalid type or API key. Received: {received_api_key[:10] if received_api_key else 'None'}..., Expected: {expected_api_key[:10] if expected_api_key else 'None'}...")
             await self.close(code=4003, reason="Authentication failed")
 
     # FIX: Add the missing verify_agent_registration method back into the class.

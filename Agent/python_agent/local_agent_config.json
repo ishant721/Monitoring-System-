@@ -2,7 +2,7 @@
   "capture_interval_seconds": 10,
   "is_activity_monitoring_enabled": true,
   "is_network_monitoring_enabled": true,
-  "is_live_streaming_enabled": true,
+  "is_live_streaming_enabled": false,
   "is_keystroke_logging_enabled": false,
   "schedule": {
     "monday": {
@@ -34,5 +34,8 @@
       "end": null
     }
   },
-  "last_updated": 1751703571.28779
+  "company_breaks": [],
+  "user_break_schedule": [],
+  "is_user_on_leave": false,
+  "last_updated": 1751720051.378741
 }

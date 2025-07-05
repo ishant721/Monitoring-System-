@@ -122,12 +122,12 @@ USE_TZ = True
 
 # Agent API Key for authentication
 MASTER_API_KEY = 'your-secure-api-key-here'
+AGENT_API_KEY = 'your-secure-api-key-here'  # Keep both for compatibility
 
 # Agent online timeout (seconds)
 AGENT_ONLINE_TIMEOUT_SECONDS = 30
 
 EMAIL_ENCRYPTION_KEY='5OJEWgSxtXW3NB5SEmut77ZNRARdSU1mUhxDIGqgMEQ='
-
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
@@ -138,9 +138,6 @@ STATICFILES_DIRS = [
 # Media files (uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-AGENT_API_KEY = "YOUR_SUPER_SECRET_AGENT_API_KEY"
-AGENT_ONLINE_TIMEOUT_SECONDS = 30 # <-- ADDED
 
 # Ensure this path is correct for your environment
 MONITORING_RULES_FILE_PATH = os.path.join(BASE_DIR, 'monitoring_rules.json') # <-- MODIFIED for portability

@@ -1054,7 +1054,8 @@ def manage_break_schedules_view(request):
                                 "type": "control_command",
                                 "command": {
                                     "type": "control",
-                                    "action": "refresh_config"
+                                    "action": "refresh_config",
+                                    "feature_bundle": "global_config"
                                 }
                             }
                         )
